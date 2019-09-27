@@ -56,6 +56,12 @@ public class Configuration {
   @Option(name = "-deleteExistingData", usage = "Delete existing buckets")
   static private boolean deleteExistingData = true;
 
+  @Option(name = "-saveNLocaNSFromDisk", usage = "Save and load namespace from disk")
+  static private boolean saveNLocaNSFromDisk = true;
+
+  @Option(name = "-diskNSFile", usage = "File path to save namespace")
+  static private String diskNSFile = "/tmp/namespace.bin";
+
   @Option(name = "-help", usage = "Print usages")
   private boolean help = false;
 
@@ -144,5 +150,13 @@ public class Configuration {
 
   public boolean isDeleteExistingData(){
     return deleteExistingData;
+  }
+
+  public boolean isSaveNLocaNSFromDisk(){
+    return saveNLocaNSFromDisk;
+  }
+
+  public String getDiskNSFile(){
+    return diskNSFile;
   }
 }

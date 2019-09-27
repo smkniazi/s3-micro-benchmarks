@@ -30,8 +30,19 @@ public class MicroBenchMain {
     }
     cloudConnector.checkAllBuckets();
 
+    if(conf.isSaveNLocaNSFromDisk()){
+      Namespace.load(conf.getDiskNSFile());
+    }
+
+    runTests();
+
+    if(conf.isSaveNLocaNSFromDisk()){
+      Namespace.save(conf.getDiskNSFile());
+    }
+  }
+
+  private void runTests() throws IOException, InterruptedException {
     test(Test.PUT);
-//    test(Test.GET);
   }
 
   private void test(Test test) throws IOException, InterruptedException {

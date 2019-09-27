@@ -1,6 +1,8 @@
 package com.lc.s3.test;
 
-public class BucketObject {
+import java.io.Serializable;
+
+public class BucketObject implements Serializable {
   private String key;
   private String bucket;
   private String prefix;
