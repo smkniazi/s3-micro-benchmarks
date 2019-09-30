@@ -76,7 +76,7 @@ public class Configuration {
   @Option(name = "-deleteExistingData", usage = "Delete existing buckets. Default: "+deleteExistingDataDefault)
   private boolean deleteExistingData = deleteExistingDataDefault;
 
-  private final boolean saveNLocaNSFromDiskDefault = true;
+  private final boolean saveNLocaNSFromDiskDefault = false;
   @Option(name = "-saveNLocaNSFromDisk", usage = "Save and load namespace from disk. Default: "+saveNLocaNSFromDiskDefault)
   private boolean saveNLocaNSFromDisk = saveNLocaNSFromDiskDefault;
 
