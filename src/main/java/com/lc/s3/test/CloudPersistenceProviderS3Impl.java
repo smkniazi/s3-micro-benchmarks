@@ -24,7 +24,7 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
   static final Log LOG = LogFactory.getLog(CloudPersistenceProviderS3Impl.class);
 
   private final AmazonS3 s3Client;
-  private final String bucketIDSeparator = ".";
+  private final static String bucketIDSeparator = ".";
   private ExecutorService threadPoolExecutor;
   private final Configuration conf;
   private TransferManager transfers;

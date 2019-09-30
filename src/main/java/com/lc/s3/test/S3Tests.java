@@ -1,6 +1,6 @@
 package com.lc.s3.test;
 
-public enum Test {
+public enum S3Tests {
   PUT("PUT"),
   GET("GET"),
   EXISTS("EXISTS"),
@@ -10,7 +10,7 @@ public enum Test {
 
   String name;
 
-  Test(String name) {
+  S3Tests(String name) {
     this.name = name;
   }
 }

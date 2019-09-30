@@ -1,39 +1,40 @@
 package com.lc.s3.test;
 
 import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatistics;
-import sun.misc.UUDecoder;
-import sun.security.krb5.Config;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class Worker implements Callable {
-  final AtomicInteger successfulOps;
-  final AtomicInteger failedOps;
-  final SynchronizedDescriptiveStatistics latency;
-  final Random rand = new Random(System.nanoTime());
-  final Configuration conf;
-  final CloudPersistenceProvider cloudConnector;
-  final Test test;
-  int counter = 0;
-  long bmStartTime = 0;
-  File tempFile;
+  private final AtomicInteger successfulOps;
+  private final AtomicInteger failedOps;
+  private final SynchronizedDescriptiveStatistics latency;
+  private final Random rand = new Random(System.nanoTime());
+  private final Configuration conf;
+  private final CloudPersistenceProvider cloudConnector;
+  private final S3Tests test;
+  private int counter = 0;
+  private long bmStartTime = 0;
+  private File tempPutFile;
+  private File tempGetFile;
+  private final Namespace namespace;
 
-  public Worker(Test test, AtomicInteger successfulOps, AtomicInteger failedOps,
+  public Worker(S3Tests test, AtomicInteger successfulOps, AtomicInteger failedOps,
                 SynchronizedDescriptiveStatistics lagency, Configuration conf,
-                CloudPersistenceProvider cloudConnector) throws IOException {
+                CloudPersistenceProvider cloudConnector, Namespace namespace)
+          throws IOException {
     this.successfulOps = successfulOps;
     this.failedOps = failedOps;
     this.latency = lagency;
     this.conf = conf;
     this.cloudConnector = cloudConnector;
     this.test = test;
-    createTempFile();
+    this.namespace = namespace;
+    createTempFiles();
   }
 
   @Override
@@ -42,19 +43,26 @@ public class Worker implements Callable {
     return null;
   }
 
-  private void test(Test test) {
+  private void test(S3Tests test) {
     bmStartTime = System.currentTimeMillis();
     lastPrintTime = bmStartTime;
     while (true) {
       try {
         long startTime = System.nanoTime();
-        if (test == Test.GET) {
-          get();
-        } else if (test == Test.PUT) {
-          put();
+        if (test == S3Tests.PUT) {
+          putTest();
+        } else if (test == S3Tests.GET) {
+          getTest();
+        } else if (test == S3Tests.GET_METADATA) {
+          metadataTest();
+        } else if (test == S3Tests.EXISTS) {
+          existTest();
+        } else if (test == S3Tests.DELETE) {
+          deleteTest();
+        } else if (test == S3Tests.LIST) {
+          listTest();
         } else {
-          throw new UnsupportedOperationException("multi threading listing is not implemeneted " +
-                  "yet");
+          throw new UnsupportedOperationException("Test not implemented yet");
         }
         long opExeTime = (System.nanoTime() - startTime);
         latency.addValue(opExeTime);
@@ -71,42 +79,67 @@ public class Worker implements Callable {
     }
   }
 
-  private void put() throws IOException {
-    UUID objectKey = UUID.randomUUID();
-    int bucketID = rand.nextInt(conf.getNumBuckets());
-    String bucket = cloudConnector.getBucketDNSID(bucketID);
-    String prefix = "";
-
-    BucketObject obj = new BucketObject(bucket, prefix, objectKey.toString());
-    Map<String, String> metadata = new HashMap<>();
-    metadata.put("metadata1", "metadata1-value");
-    metadata.put("metadata2", "metadata2-value");
-    cloudConnector.uploadObject((short) bucketID, objectKey.toString(), tempFile, metadata);
-    Namespace.put(obj);
+  private void putTest() throws IOException {
+    BucketObject obj = namespace.newBucketObject();
+    Map<String, String> metadata = obj.getMetadata();
+    cloudConnector.uploadObject(obj.getBucket(), obj.getKey(), tempPutFile, metadata);
+    namespace.put(obj);
   }
 
-  private void createTempFile() throws IOException {
-    UUID key = UUID.randomUUID();
-    tempFile = new File(conf.getTmpFolder() + File.separator + key.toString());
+  private void getTest() throws IOException {
+    BucketObject obj = namespace.getRandomObject();
+    cloudConnector.downloadObject(obj.getBucket(), obj.getKey(), tempGetFile);
+  }
 
-    if (!tempFile.createNewFile()) {
-      throw new RuntimeException("Unable to create temp file");
+  private void existTest() throws Exception {
+    BucketObject obj = namespace.getRandomObject();
+    if(!cloudConnector.objectExists(obj.getBucket(), obj.getKey())){
+      System.err.println("Unexpected. Object not found");
+    }
+  }
+
+  private void deleteTest() throws Exception {
+    BucketObject obj = namespace.popLast();
+    cloudConnector.deleteObject(obj.getBucket(), obj.getKey());
+  }
+
+  private void listTest() throws Exception {
+    Exception up = new UnsupportedOperationException("not implemented yet");
+    throw up;
+  }
+
+  private void metadataTest() throws Exception {
+    BucketObject obj = namespace.getRandomObject();
+    if(cloudConnector.getUserMetaData(obj.getBucket(), obj.getKey()) == null){
+      System.err.println("Unexpected. Object not found.");
+    }
+  }
+
+  private void createTempFiles() throws IOException {
+    UUID key = UUID.randomUUID();
+    tempPutFile = new File(conf.getTmpFolder() + File.separator + key.toString());
+
+    if (!tempPutFile.createNewFile()) {
+      throw new RuntimeException("Unable to create temp file. "+tempPutFile);
     }
 
     byte buffer[] = new byte[conf.getObjSize()];
-    try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+    try (FileOutputStream fos = new FileOutputStream(tempPutFile)) {
       fos.write(buffer);
+    }
+
+    key = UUID.randomUUID();
+    tempGetFile = new File(conf.getTmpFolder() + File.separator + key.toString());
+    if (!tempGetFile.createNewFile()) {
+      throw new IOException("Unable to create temp file " + tempGetFile);
     }
   }
 
 
-  private void get() {
-    throw new UnsupportedOperationException("put not implemented yet");
-  }
 
   static long lastPrintTime = System.currentTimeMillis();
 
-  private synchronized static void printSpeed(Test test, long startTime,
+  private synchronized static void printSpeed(S3Tests test, long startTime,
                                               AtomicInteger successfulOps) {
     long curTime = System.currentTimeMillis();
     if ((curTime - lastPrintTime) > 5000) {
