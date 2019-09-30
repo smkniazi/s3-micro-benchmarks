@@ -5,65 +5,112 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 public class Configuration {
-  @Option(name = "-numClients", usage = "Number of threads. Default is 1")
-  private static int numClients = 1;
 
-  @Option(name = "-noOfPrefixes", usage = "Number of S3 Prefixes. 0 means everything will be " +
-          "written at the root level")
-  private static boolean noOfPrefixes = false;
+  private final int numClientsDefault = 5;
+  @Option(name = "-numClients", usage = "Number of threads. Default: " + numClientsDefault)
+  private int numClients = numClientsDefault;
 
-  @Option(name = "-bmDuration", usage = "For how long the bench mark should run. Time in ms")
-  static private long benchmarkDuration = 20000;
+  private final boolean usePrefixesDefault = false;
+  @Option(name = "-usePrefixes", usage = "if false then all objects are written to the bucket " +
+          "root. Default: " + usePrefixesDefault)
+  private boolean usePrefixes = usePrefixesDefault;
 
-  @Option(name = "-clientId", usage = "Id of this application.")
-  static private int clientId = 0;
+  private final long prefixSizeDefault = Long.MAX_VALUE;
+  @Option(name = "-prefixSize", usage = "Max number of element in each prefix. Default: " + prefixSizeDefault)
+  private long prefixSize = prefixSizeDefault;
 
-  @Option(name = "-skipPrompt", usage = "Do not ask for (Y/N) before starting the bench mark")
-  static private boolean skipPrompt = false;
+  private final long benchmarkDurationDefault = 10000;
+  @Option(name = "-bmDuration", usage = "For how long the bench mark should run. Time in ms. " +
+          "Default: " + benchmarkDurationDefault)
+  private long benchmarkDuration = benchmarkDurationDefault;
 
-  @Option(name = "-bucketPrefix", usage = "Bucket prefix")
-  static private String bucketPrefix = "hopsfs-s3-bm";
+  private final int clientIdDefault = 0;
+  @Option(name = "-clientId", usage = "Id of this application. Default: " + clientIdDefault)
+  private int clientId = clientIdDefault;
 
-  @Option(name = "-region", usage = "S3 Region")
-  static private String regionStr = "eu-north-1";
-  static private Regions region = Regions.fromName(regionStr);
+  private final String bucketPrefixDefault = "hopsfs-s3-bm";
+  @Option(name = "-bucketPrefix", usage = "Bucket prefix. Default: " + bucketPrefixDefault)
+  private String bucketPrefix = bucketPrefixDefault;
 
-  @Option(name = "-numBuckets", usage = "Number of buckets")
-  static private int numBuckets = 1;
+  private final String regionStrDefault = "eu-west-1";
+  @Option(name = "-region", usage = "S3 Region. Default:" + regionStrDefault)
+  private String regionStr = regionStrDefault;
+  private Regions region = Regions.fromName(regionStr);
 
-  @Option(name = "-bucketDeletionThreads", usage = "Number of threads for deleting a bucket")
-  static private int bucketDeletionThreads = 1;
+  private final int numBucketsDefault = 1;
+  @Option(name = "-numBuckets", usage = "Number of buckets. Default: " + numBucketsDefault)
+  private int numBuckets = numBucketsDefault;
 
-  @Option(name = "-maxUploadThreads", usage = "Max upload threads")
-  static private int maxUploadThreads = 2;
+  private final int bucketDeletionThreadsDefault = 50;
+  @Option(name = "-bucketDeletionThreads", usage = "Number of threads for deleting a bucket. " +
+          "Default: " + bucketDeletionThreadsDefault)
+  private int bucketDeletionThreads = bucketDeletionThreadsDefault;
 
-  @Option(name = "-threadlTTL", usage = "Thread TTL")
-  static private int threadlTTL = 60;
+  private final int maxUploadThreadsDefault = 20;
+  @Option(name = "-maxUploadThreads", usage = "Max upload threads. Default: " + maxUploadThreadsDefault)
+  private int maxUploadThreads = maxUploadThreadsDefault;
 
-  @Option(name = "-multiPartSize", usage = "Multipart size. >= 5MB (5 * 1024 * 1024)")
-  static private int multiPartSize = 5 * 1024 * 1024;
+  private final int threadlTTLDefault = 60;
+  @Option(name = "-threadlTTL", usage = "Thread TTL in Sec. Default: " + threadlTTLDefault)
+  private int threadlTTL = threadlTTLDefault;
 
+  private final int multiPartSizeDefault = 5 * 1024 * 1024;
+  @Option(name = "-multiPartSize", usage = "Multipart size. >= 5MB (5 * 1024 * 1024). Default: " + multiPartSizeDefault)
+  private int multiPartSize = multiPartSizeDefault;
+
+  private final int multiPartThresholdDefault = 5 * 1024 * 1024;
   @Option(name = "-multiPartThreshold", usage = "Multipart threashold size. >= 5MB (5 * 1024 * " +
-          "1024)")
-  static private int multiPartThreshold = 5 * 1024 * 1024;
+          "1024). Default: " + multiPartThresholdDefault)
+  private int multiPartThreshold = multiPartThresholdDefault;
 
-  @Option(name = "-tmpFolder", usage = "Folder where temp files will be created ")
-  static private String tmpFolder = "/tmp";
+  private final String tmpFolderDefault = "/tmp";
+  @Option(name = "-tmpFolder", usage = "Folder where temp files will be created. Default: " + tmpFolderDefault)
+  private String tmpFolder = tmpFolderDefault;
 
-  @Option(name = "-objSize", usage = "Size of the objects in bytes uploaded to the cloud ")
-  static private int objSize = 1024 * 1024;
+  private final int objSizeDefault = 1024;
+  @Option(name = "-objSize", usage = "Size of the objects in bytes uploaded to the cloud. " +
+          "Default: "+objSizeDefault)
+  private int objSize = objSizeDefault;
 
-  @Option(name = "-deleteExistingData", usage = "Delete existing buckets")
-  static private boolean deleteExistingData = true;
+  private final boolean deleteExistingDataDefault = false;
+  @Option(name = "-deleteExistingData", usage = "Delete existing buckets. Default: "+deleteExistingDataDefault)
+  private boolean deleteExistingData = deleteExistingDataDefault;
 
-  @Option(name = "-saveNLocaNSFromDisk", usage = "Save and load namespace from disk")
-  static private boolean saveNLocaNSFromDisk = true;
+  private final boolean saveNLocaNSFromDiskDefault = true;
+  @Option(name = "-saveNLocaNSFromDisk", usage = "Save and load namespace from disk. Default: "+saveNLocaNSFromDiskDefault)
+  private boolean saveNLocaNSFromDisk = saveNLocaNSFromDiskDefault;
 
-  @Option(name = "-diskNSFile", usage = "File path to save namespace")
-  static private String diskNSFile = "/tmp/namespace.bin";
+  private final String diskNSFileDefault = "/tmp/namespace.bin";
+  @Option(name = "-diskNSFile", usage = "File path to save namespace. Default: "+diskNSFileDefault)
+  private String diskNSFile = diskNSFileDefault;
 
   @Option(name = "-help", usage = "Print usages")
   private boolean help = false;
+
+  private final boolean testPutDefault = true;
+  @Option(name = "-testPut", usage = "Run put test Default: "+testPutDefault)
+  private boolean testPut = testPutDefault;
+
+  private final boolean testGetDefault = false;
+  @Option(name = "-testGet", usage = "Run get test. Default: "+testGetDefault)
+  private boolean testGet = testGetDefault;
+
+  private final boolean testListDefault = false;
+  @Option(name = "-testList", usage = "Run list test. Default: "+testListDefault)
+  private boolean testList = testListDefault;
+
+  private final boolean testObjExistsDefault = false;
+  @Option(name = "-testObjExists", usage = "Run object exists test. Default: "+testObjExistsDefault)
+  private boolean testObjExists = testObjExistsDefault;
+
+  private final boolean testDeleteDefault = false;
+  @Option(name = "-testDelete", usage = "Run delete test. Default: "+testDeleteDefault)
+  private boolean testDelete = testDeleteDefault;
+
+  private final boolean testMetadataDefault = false;
+  @Option(name = "-testGetMetaData", usage = "Run get obj metadata test. Default: "+testMetadataDefault)
+  private boolean testMetadata = testMetadataDefault;
+
 
   public int getMaxUploadThreads() {
     return maxUploadThreads;
@@ -97,20 +144,12 @@ public class Configuration {
     return bucketDeletionThreads;
   }
 
-  public boolean isNoOfPrefixes() {
-    return noOfPrefixes;
-  }
-
   public long getBenchmarkDuration() {
     return benchmarkDuration;
   }
 
   public int getClientId() {
     return clientId;
-  }
-
-  public boolean isSkipPrompt() {
-    return skipPrompt;
   }
 
   public void parseArgs(String[] args) {
@@ -148,15 +187,47 @@ public class Configuration {
     return objSize;
   }
 
-  public boolean isDeleteExistingData(){
+  public boolean isDeleteExistingData() {
     return deleteExistingData;
   }
 
-  public boolean isSaveNLocaNSFromDisk(){
+  public boolean isSaveNLocaNSFromDisk() {
     return saveNLocaNSFromDisk;
   }
 
-  public String getDiskNSFile(){
+  public String getDiskNSFile() {
     return diskNSFile;
+  }
+
+  public long getPrefixSize() {
+    return prefixSize;
+  }
+
+  public boolean isTestPut() {
+    return testPut;
+  }
+
+  public boolean isTestGet() {
+    return testGet;
+  }
+
+  public boolean isTestList() {
+    return testList;
+  }
+
+  public boolean isTestObjExists() {
+    return testObjExists;
+  }
+
+  public boolean isTestMetadata() {
+    return testMetadata;
+  }
+
+  public boolean isTestDelete() {
+    return testDelete;
+  }
+
+  public boolean isUsePrefixes() {
+    return usePrefixes;
   }
 }

@@ -58,7 +58,9 @@ public class Worker implements Callable {
         } else if (test == S3Tests.EXISTS) {
           existTest();
         } else if (test == S3Tests.DELETE) {
-          deleteTest();
+          if (deleteTest()){
+            return;
+          }
         } else if (test == S3Tests.LIST) {
           listTest();
         } else {
@@ -68,7 +70,7 @@ public class Worker implements Callable {
         latency.addValue(opExeTime);
         successfulOps.incrementAndGet();
         printSpeed(test, bmStartTime, successfulOps);
-      } catch (Throwable e) {
+      } catch (IOException e) {
         failedOps.incrementAndGet();
         e.printStackTrace();
       } finally {
@@ -91,24 +93,28 @@ public class Worker implements Callable {
     cloudConnector.downloadObject(obj.getBucket(), obj.getKey(), tempGetFile);
   }
 
-  private void existTest() throws Exception {
+  private void existTest() throws IOException {
     BucketObject obj = namespace.getRandomObject();
     if(!cloudConnector.objectExists(obj.getBucket(), obj.getKey())){
       System.err.println("Unexpected. Object not found");
     }
   }
 
-  private void deleteTest() throws Exception {
+  private boolean deleteTest() throws IOException {
     BucketObject obj = namespace.popLast();
-    cloudConnector.deleteObject(obj.getBucket(), obj.getKey());
+    if( obj != null) {
+      cloudConnector.deleteObject(obj.getBucket(), obj.getKey());
+      return true;
+    }
+    return false;
   }
 
-  private void listTest() throws Exception {
-    Exception up = new UnsupportedOperationException("not implemented yet");
+  private void listTest() throws IOException {
+    IOException up = new IOException("not implemented yet");
     throw up;
   }
 
-  private void metadataTest() throws Exception {
+  private void metadataTest() throws IOException {
     BucketObject obj = namespace.getRandomObject();
     if(cloudConnector.getUserMetaData(obj.getBucket(), obj.getKey()) == null){
       System.err.println("Unexpected. Object not found.");
@@ -145,7 +151,7 @@ public class Worker implements Callable {
     if ((curTime - lastPrintTime) > 5000) {
       long timeElapsed = (System.currentTimeMillis() - startTime);
       double speed = (successfulOps.get() / (double) timeElapsed) * 1000;
-      System.out.println("Test: " + test + " Successful Ops: " + successfulOps + "\tSpeed: " + speed +
+      System.out.println("Test: " + test + " Successful Ops: " + successfulOps + "\tSpeed: " + (long)speed +
               " ops/sec.");
       lastPrintTime = System.currentTimeMillis();
     }

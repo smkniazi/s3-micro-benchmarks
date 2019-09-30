@@ -24,32 +24,61 @@ public class MicroBenchMain {
 
   public void startApplication(String[] args) throws Exception {
     conf.parseArgs(args);
+
+    namespace = Namespace.createNamespace(conf);
+
     cloudConnector = new CloudPersistenceProviderS3Impl(conf);
 
     if (conf.isDeleteExistingData()) {
       cloudConnector.format();
+      namespace.deleteLocalCopy();
     }
-
-    namespace = Namespace.getNamespace(conf);
 
     cloudConnector.checkAllBuckets();
 
     if (conf.isSaveNLocaNSFromDisk()) {
-      namespace.load(conf.getDiskNSFile());
+      namespace.load();
     }
+
+    System.out.println("Number of parallel clients: " + conf.getNumClients());
 
     runTests();
 
     if (conf.isSaveNLocaNSFromDisk()) {
-      namespace.save(conf.getDiskNSFile());
+      namespace.save();
     }
   }
 
   private void runTests() throws IOException, InterruptedException {
-    test(S3Tests.PUT);
+    if (conf.isTestPut()) {
+      test(S3Tests.PUT);
+    }
+
+    if (conf.isTestGet()) {
+      test(S3Tests.GET);
+    }
+
+    if (conf.isTestMetadata()) {
+      test(S3Tests.GET_METADATA);
+    }
+
+    if (conf.isTestObjExists()) {
+      test(S3Tests.EXISTS);
+    }
+
+    if (conf.isTestList()) {
+      test(S3Tests.LIST);
+    }
+
+    if (conf.isTestDelete()) {
+      test(S3Tests.DELETE);
+    }
   }
 
   private void test(S3Tests test) throws IOException, InterruptedException {
+    System.out.println("\nStarting Test : " + test);
+    successfulOps = new AtomicInteger(0);
+    failedOps = new AtomicInteger(0);
     long startTime = System.currentTimeMillis();
     startMicroBench(test);
     long totExeTime = (System.currentTimeMillis() - startTime);

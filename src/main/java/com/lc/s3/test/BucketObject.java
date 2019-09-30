@@ -6,13 +6,11 @@ import java.util.Map;
 public class BucketObject implements Serializable {
   private String key;
   private short bucket;
-  private String prefix;
   private Map<String, String> metadata;
 
-  public BucketObject(short bucket, String prefix, String key) {
+  public BucketObject(short bucket, String key) {
     this.key = key;
     this.bucket = bucket;
-    this.prefix = prefix;
   }
 
   public String getKey() {
@@ -31,12 +29,8 @@ public class BucketObject implements Serializable {
     return bucket;
   }
 
-  public String getPrefix() {
-    return prefix;
-  }
-
   @Override
   public int hashCode() {
-    return key.hashCode() + Short.hashCode(bucket) + prefix.hashCode();
+    return key.hashCode() + Short.hashCode(bucket);
   }
 }

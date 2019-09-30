@@ -125,9 +125,13 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
         emptyAndDeleteS3Bucket(getBucketDNSID(i), tPool);
       }
 
-      createBuckets();
-    } finally {
       tPool.shutdown();
+      System.out.println("\nDeleted all the blocks and buckets");
+
+      createBuckets();
+      System.out.println("Created all the buckets");
+
+    } finally {
     }
   }
 
@@ -142,6 +146,7 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
         if (!s3Client.doesBucketExistV2(bucketID)) {
           //wait for a sec and retry
           try {
+            System.out.println("Bucket not found. S3 Eventual Consistency.");
             Thread.sleep(1000);
           } catch (InterruptedException e) {
           }
@@ -191,7 +196,7 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
         while (objIter.hasNext()) {
           final String objectKey = objIter.next().getKey();
 
-          addTasks.add(new Callable<Object>() {
+          Callable task = new Callable<Object>() {
             @Override
             public Object call() throws Exception {
               s3Client.deleteObject(bucketName, objectKey);
@@ -199,10 +204,9 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
               System.out.print(msg);
               return null;
             }
-          });
+          };
+          tPool.submit(task);
         }
-
-        tPool.invokeAll(addTasks);
 
         // If the bucket contains many objects, the listObjects() call
         // might not return all of the objects in the first listing. Check to
@@ -246,8 +250,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
       // parse the response from Amazon S3.
       up.printStackTrace();
       throw up;
-    } catch (InterruptedException up) {
-      up.printStackTrace();
     }
   }
 

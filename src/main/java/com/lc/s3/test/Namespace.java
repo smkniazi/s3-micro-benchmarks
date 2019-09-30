@@ -17,7 +17,7 @@ public class Namespace {
   private Namespace() {
   }
 
-  public static Namespace getNamespace(Configuration config) {
+  public static Namespace createNamespace(Configuration config) {
     if (ns == null) {
       ns = new Namespace();
     }
@@ -42,24 +42,27 @@ public class Namespace {
 
   public BucketObject popLast() {
     synchronized (namespace) {
-      return namespace.remove(namespace.size() - 1);
+      if (namespace.size() > 0) {
+        return namespace.remove(namespace.size() - 1);
+      }
+      return null;
     }
   }
 
-  public void load(String diskCopy) throws IOException, ClassNotFoundException {
-    File file = new File(diskCopy);
+  public void load() throws IOException, ClassNotFoundException {
+    File file = new File(conf.getDiskNSFile());
     if (file.exists()) {
       FileInputStream fileIn = new FileInputStream(file);
       ObjectInputStream objectIn = new ObjectInputStream(fileIn);
       blockID = (AtomicLong) objectIn.readObject();
       namespace = (ArrayList<BucketObject>) objectIn.readObject();
       objectIn.close();
-      System.out.println("Loaded namespace from file");
+      System.out.println("Loaded namespace from file. Blocks: " + namespace.size() + " Max ID: " + blockID.get());
     }
   }
 
-  public void save(String diskCopy) throws IOException {
-    File file = new File(diskCopy);
+  public void save() throws IOException {
+    File file = new File(conf.getDiskNSFile());
     if (file.exists()) {
       file.delete();
     }
@@ -77,20 +80,30 @@ public class Namespace {
     synchronized (namespace) {
       id = blockID.incrementAndGet();
     }
+    long prefix = id / conf.getPrefixSize();
+    String blockKey = "folder-"+Long.toString(prefix)+"/"+id;
 
     if (conf.getNumBuckets() > Short.MAX_VALUE) {
       throw new IllegalArgumentException("Too many buckets. Max: " + Short.MAX_VALUE);
     }
 
+
     short bucketID = (short) rand.nextInt(conf.getNumBuckets());
-    String prefix = "";
+
     Map<String, String> metadata = new HashMap<>();
     metadata.put("metadata1", "metadata1-value");
     metadata.put("metadata2", "metadata2-value");
 
-    BucketObject obj = new BucketObject(bucketID, prefix, Long.toString(id));
+    BucketObject obj = new BucketObject(bucketID, blockKey);
     obj.setMetadata(metadata);
 
     return obj;
+  }
+
+  public void deleteLocalCopy() {
+    File file = new File(conf.getDiskNSFile());
+    if (file.exists()) {
+      file.delete();
+    }
   }
 }
