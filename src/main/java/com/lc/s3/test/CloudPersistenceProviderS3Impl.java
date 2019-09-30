@@ -19,7 +19,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider {
+public class CloudPersistenceProviderS3Impl {
 
   static final Log LOG = LogFactory.getLog(CloudPersistenceProviderS3Impl.class);
 
@@ -39,11 +39,9 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
   }
 
   private AmazonS3 connect() {
-    System.out.println("HopsFS-Cloud. Connecting to S3. Region " + conf.getRegion());
     AmazonS3 s3client = AmazonS3ClientBuilder.standard()
             .withRegion(conf.getRegion())
             .build();
-    System.out.println("HopsFS-Cloud. Connected");
     return s3client;
   }
 
@@ -118,7 +116,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
   /*
   Deletes all the buckets that are used by HopsFS
    */
-  @Override
   public void format() {
     if (SERVERLESS) {
       sleep();
@@ -144,7 +141,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     }
   }
 
-  @Override
   public void checkAllBuckets() {
     if (SERVERLESS) {
       sleep();
@@ -266,8 +262,38 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     }
   }
 
-  @Override
   public void uploadObject(short bucketID, String objectID, File object,
+                                  Map<String, String> metadata) throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return;
+    }
+
+    try {
+      long startTime = System.currentTimeMillis();
+      String bucket = getBucketDNSID(bucketID);
+      PutObjectRequest putReq = new PutObjectRequest(bucket,
+              objectID, object);
+
+      // Upload a file as a new object with ContentType and title specified.
+      ObjectMetadata objMetadata = new ObjectMetadata();
+      objMetadata.setContentType("plain/text");
+      //objMetadata.addUserMetadata(entry.getKey(), entry.getValue());
+      objMetadata.setUserMetadata(metadata);
+      putReq.setMetadata(objMetadata);
+
+      s3Client.putObject(putReq);
+      LOG.debug("HopsFS-Cloud. Put Object. Bucket ID: " + bucketID + " Object ID: " + objectID
+              + " Time (ms): " + (System.currentTimeMillis() - startTime));
+    } catch (AmazonServiceException e) {
+      throw new IOException(e);
+    } catch (SdkClientException e) {
+      throw new IOException(e);
+    }
+
+  }
+
+  public void uploadObjectUsingTM(short bucketID, String objectID, File object,
                            Map<String, String> metadata) throws IOException {
     if (SERVERLESS) {
       sleep();
@@ -305,7 +331,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     return conf.getBucketPrefix() + bucketIDSeparator + ID;
   }
 
-  @Override
   public boolean objectExists(short bucketID, String objectID) throws IOException {
     if (SERVERLESS) {
       sleep();
@@ -340,7 +365,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
   }
 
 
-  @Override
   public Map<String, String> getUserMetaData(short bucketID, String objectID)
           throws IOException {
     if (SERVERLESS) {
@@ -356,7 +380,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     return metadata;
   }
 
-  @Override
   public long getObjectSize(short bucketID, String objectID) throws IOException {
     if (SERVERLESS) {
       sleep();
@@ -371,7 +394,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     return size;
   }
 
-  @Override
   public void downloadObject(short bucketID, String objectID, File path) throws IOException {
     if (SERVERLESS) {
       sleep();
@@ -394,7 +416,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     }
   }
 
-  @Override
   public List<String> getAll() throws IOException {
     if (SERVERLESS) {
       sleep();
@@ -408,7 +429,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     return allBlocks;
   }
 
-  @Override
   public void deleteObject(short bucketID, String objectID) throws IOException {
     if (SERVERLESS) {
       sleep();
@@ -424,7 +444,6 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     }
   }
 
-  @Override
   public void shutdown() {
     s3Client.shutdown();
     if (transfers != null) {
@@ -473,4 +492,32 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     }
 
   }
+
+  private static AtomicInteger connectorCount = new AtomicInteger(0);
+  private static ThreadLocal<CloudPersistenceProviderS3Impl> connectors =
+          new ThreadLocal<>();
+  private static CloudPersistenceProviderS3Impl singleConnector = null;
+  public static CloudPersistenceProviderS3Impl getConnector(Configuration conf){
+    if(!conf.isDisableConnectorSharing()){
+      if(singleConnector == null){
+        singleConnector = createConnector(conf);
+      }
+      return singleConnector;
+    } else {
+      CloudPersistenceProviderS3Impl connector  = connectors.get();
+      if(connector == null){
+        connector = createConnector(conf);
+        connectors.set(connector);
+      }
+      return connector;
+    }
+  }
+
+  private static CloudPersistenceProviderS3Impl createConnector(Configuration conf) {
+     CloudPersistenceProviderS3Impl connector = new CloudPersistenceProviderS3Impl(conf);
+     connectorCount.incrementAndGet();
+     System.out.println("New S3 connector created. Total connectors: "+connectorCount);
+     return connector;
+  }
+
 }

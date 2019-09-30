@@ -1,6 +1,7 @@
 package com.lc.s3.test;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -17,34 +18,32 @@ public class MicroBenchMain {
   private static long lastOutput = 0;
   private Namespace namespace;
   private SynchronizedDescriptiveStatistics latency = new SynchronizedDescriptiveStatistics();
-
   Random rand = new Random(System.currentTimeMillis());
-  CloudPersistenceProvider cloudConnector = null;
-
+  private static DecimalFormat df2 = new DecimalFormat("#.##");
 
   public void startApplication(String[] args) throws Exception {
     conf.parseArgs(args);
 
     namespace = Namespace.createNamespace(conf);
 
-    cloudConnector = new CloudPersistenceProviderS3Impl(conf);
-
     if (conf.isDeleteExistingData()) {
-      cloudConnector.format();
+      CloudPersistenceProviderS3Impl.getConnector(conf).format();
       namespace.deleteLocalCopy();
     }
 
-    cloudConnector.checkAllBuckets();
+    CloudPersistenceProviderS3Impl.getConnector(conf).checkAllBuckets();
 
-    if (conf.isSaveNLocaNSFromDisk()) {
+    if (conf.isSaveNSToDisk()) {
       namespace.load();
     }
 
     System.out.println("Number of parallel clients: " + conf.getNumClients());
+    System.out.println("Disable sharing connections " + conf.isDisableConnectorSharing());
+    System.out.println("Disable transfer manager " + conf.isDisableS3TransferManager());
 
     runTests();
 
-    if (conf.isSaveNLocaNSFromDisk()) {
+    if (conf.isSaveNSToDisk()) {
       namespace.save();
     }
   }
@@ -82,13 +81,14 @@ public class MicroBenchMain {
     long startTime = System.currentTimeMillis();
     startMicroBench(test);
     long totExeTime = (System.currentTimeMillis() - startTime);
-    long avgSpeed = (long) (((double) successfulOps.get() / (double) totExeTime) * 1000);
+    double avgSpeed = (((double) successfulOps.get() / (double) totExeTime) * 1000);
     double avgLatency = latency.getMean() / 1000000;
     blueColoredText("Test: " + S3Tests.PUT +
-            " Avg Speed: " + avgSpeed +
-            " Avg Latency: " + avgLatency +
             " Successful Ops: " + successfulOps +
-            " Failed: " + failedOps);
+            " Failed: " + failedOps +
+            " Avg Latency: " + df2.format(avgLatency) + " ms"+
+            " Avg Speed: " + df2.format(avgSpeed) +" ops/sec"
+    );
 
   }
 
@@ -96,7 +96,7 @@ public class MicroBenchMain {
     List<Worker> workers = new ArrayList<Worker>();
     for (int i = 0; i < conf.getNumClients(); i++) {
       Worker worker = new Worker(test, successfulOps, failedOps, latency,
-              conf, cloudConnector, namespace);
+              conf, namespace);
       workers.add(worker);
     }
     return workers;

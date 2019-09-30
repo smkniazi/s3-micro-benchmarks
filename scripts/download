@@ -1,0 +1,8 @@
+#!/bin/bash
+
+cd ../..
+
+rm -rf s3-micro-benchmarks*
+scp -r  salman@cloud18.sics.se:/home/salman/s3-micro-benchmarks.tar.gz . ; tar xf s3-micro-benchmarks.tar
+
+

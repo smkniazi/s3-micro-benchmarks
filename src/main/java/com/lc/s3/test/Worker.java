@@ -15,7 +15,6 @@ public class Worker implements Callable {
   private final SynchronizedDescriptiveStatistics latency;
   private final Random rand = new Random(System.nanoTime());
   private final Configuration conf;
-  private final CloudPersistenceProvider cloudConnector;
   private final S3Tests test;
   private int counter = 0;
   private long bmStartTime = 0;
@@ -25,13 +24,12 @@ public class Worker implements Callable {
 
   public Worker(S3Tests test, AtomicInteger successfulOps, AtomicInteger failedOps,
                 SynchronizedDescriptiveStatistics lagency, Configuration conf,
-                CloudPersistenceProvider cloudConnector, Namespace namespace)
+                Namespace namespace)
           throws IOException {
     this.successfulOps = successfulOps;
     this.failedOps = failedOps;
     this.latency = lagency;
     this.conf = conf;
-    this.cloudConnector = cloudConnector;
     this.test = test;
     this.namespace = namespace;
     createTempFiles();
@@ -84,18 +82,26 @@ public class Worker implements Callable {
   private void putTest() throws IOException {
     BucketObject obj = namespace.newBucketObject();
     Map<String, String> metadata = obj.getMetadata();
-    cloudConnector.uploadObject(obj.getBucket(), obj.getKey(), tempPutFile, metadata);
+    if(conf.isDisableS3TransferManager()){
+      CloudPersistenceProviderS3Impl.getConnector(conf)
+              .uploadObject(obj.getBucket(), obj.getKey(), tempPutFile, metadata);
+    } else {
+      CloudPersistenceProviderS3Impl.getConnector(conf)
+              .uploadObjectUsingTM(obj.getBucket(), obj.getKey(), tempPutFile, metadata);
+    }
     namespace.put(obj);
   }
 
   private void getTest() throws IOException {
     BucketObject obj = namespace.getRandomObject();
-    cloudConnector.downloadObject(obj.getBucket(), obj.getKey(), tempGetFile);
+    CloudPersistenceProviderS3Impl.getConnector(conf)
+            .downloadObject(obj.getBucket(), obj.getKey(), tempGetFile);
   }
 
   private void existTest() throws IOException {
     BucketObject obj = namespace.getRandomObject();
-    if(!cloudConnector.objectExists(obj.getBucket(), obj.getKey())){
+    if(!CloudPersistenceProviderS3Impl.getConnector(conf)
+            .objectExists(obj.getBucket(), obj.getKey())){
       System.err.println("Unexpected. Object not found");
     }
   }
@@ -103,7 +109,8 @@ public class Worker implements Callable {
   private boolean deleteTest() throws IOException {
     BucketObject obj = namespace.popLast();
     if( obj != null) {
-      cloudConnector.deleteObject(obj.getBucket(), obj.getKey());
+      CloudPersistenceProviderS3Impl.getConnector(conf)
+              .deleteObject(obj.getBucket(), obj.getKey());
       return true;
     }
     return false;
@@ -116,7 +123,8 @@ public class Worker implements Callable {
 
   private void metadataTest() throws IOException {
     BucketObject obj = namespace.getRandomObject();
-    if(cloudConnector.getUserMetaData(obj.getBucket(), obj.getKey()) == null){
+    if(CloudPersistenceProviderS3Impl.getConnector(conf)
+           .getUserMetaData(obj.getBucket(), obj.getKey()) == null){
       System.err.println("Unexpected. Object not found.");
     }
   }

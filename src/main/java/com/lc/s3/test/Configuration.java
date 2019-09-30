@@ -76,9 +76,10 @@ public class Configuration {
   @Option(name = "-deleteExistingData", usage = "Delete existing buckets. Default: "+deleteExistingDataDefault)
   private boolean deleteExistingData = deleteExistingDataDefault;
 
-  private final boolean saveNLocaNSFromDiskDefault = false;
-  @Option(name = "-saveNLocaNSFromDisk", usage = "Save and load namespace from disk. Default: "+saveNLocaNSFromDiskDefault)
-  private boolean saveNLocaNSFromDisk = saveNLocaNSFromDiskDefault;
+  private final boolean saveNSToDiskDefault = false;
+  @Option(name = "-saveNSToDisk", usage =
+          "Save and load namespace from disk. Default: "+saveNSToDiskDefault)
+  private boolean saveNSToDisk = saveNSToDiskDefault;
 
   private final String diskNSFileDefault = "/tmp/namespace.bin";
   @Option(name = "-diskNSFile", usage = "File path to save namespace. Default: "+diskNSFileDefault)
@@ -111,6 +112,14 @@ public class Configuration {
   @Option(name = "-testGetMetaData", usage = "Run get obj metadata test. Default: "+testMetadataDefault)
   private boolean testMetadata = testMetadataDefault;
 
+  private final boolean disableConnectorSharingDefault = false;
+  @Option(name = "-disableConnectorSharing", usage = "Disable sharing S3 connector with the threads. Default: "+disableConnectorSharingDefault)
+  private boolean disableConnectorSharing = disableConnectorSharingDefault;
+
+  private final boolean disableTransferManagerDefault = false;
+  @Option(name = "-disableS3TransferManager", usage =
+          "Disable S3 Transfer manager. Default: "+disableTransferManagerDefault)
+  private boolean disableS3TransferManager = disableTransferManagerDefault;
 
   public int getMaxUploadThreads() {
     return maxUploadThreads;
@@ -191,8 +200,8 @@ public class Configuration {
     return deleteExistingData;
   }
 
-  public boolean isSaveNLocaNSFromDisk() {
-    return saveNLocaNSFromDisk;
+  public boolean isSaveNSToDisk() {
+    return saveNSToDisk;
   }
 
   public String getDiskNSFile() {
@@ -229,5 +238,13 @@ public class Configuration {
 
   public boolean isUsePrefixes() {
     return usePrefixes;
+  }
+
+  public boolean isDisableConnectorSharing() {
+    return disableConnectorSharing;
+  }
+
+  public boolean isDisableS3TransferManager() {
+    return disableS3TransferManager;
   }
 }
