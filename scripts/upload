@@ -1,8 +1,9 @@
 #!/bin/bash
 
 pushd . 
-
-cd ../..
+cd ..
+mvn install
+cd ..
 tar cjf s3-micro-benchmarks.tar.gz s3-micro-benchmarks
 scp s3-micro-benchmarks.tar.gz salman@cloud18.sics.se:/home/salman/
 

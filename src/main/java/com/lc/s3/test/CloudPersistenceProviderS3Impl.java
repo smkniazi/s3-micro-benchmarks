@@ -263,7 +263,7 @@ public class CloudPersistenceProviderS3Impl {
   }
 
   public void uploadObject(short bucketID, String objectID, File object,
-                                  Map<String, String> metadata) throws IOException {
+                           Map<String, String> metadata) throws IOException {
     if (SERVERLESS) {
       sleep();
       return;
@@ -294,7 +294,7 @@ public class CloudPersistenceProviderS3Impl {
   }
 
   public void uploadObjectUsingTM(short bucketID, String objectID, File object,
-                           Map<String, String> metadata) throws IOException {
+                                  Map<String, String> metadata) throws IOException {
     if (SERVERLESS) {
       sleep();
       return;
@@ -484,7 +484,7 @@ public class CloudPersistenceProviderS3Impl {
     return listedKeys;
   }
 
-  private void sleep(){
+  private void sleep() {
     try {
       Thread.sleep(10);
     } catch (InterruptedException e) {
@@ -497,15 +497,16 @@ public class CloudPersistenceProviderS3Impl {
   private static ThreadLocal<CloudPersistenceProviderS3Impl> connectors =
           new ThreadLocal<>();
   private static CloudPersistenceProviderS3Impl singleConnector = null;
-  public static CloudPersistenceProviderS3Impl getConnector(Configuration conf){
-    if(!conf.isDisableConnectorSharing()){
-      if(singleConnector == null){
+
+  public static CloudPersistenceProviderS3Impl getConnector(Configuration conf) {
+    if (!conf.isDisableConnectorSharing()) {
+      if (singleConnector == null) {
         singleConnector = createConnector(conf);
       }
       return singleConnector;
     } else {
-      CloudPersistenceProviderS3Impl connector  = connectors.get();
-      if(connector == null){
+      CloudPersistenceProviderS3Impl connector = connectors.get();
+      if (connector == null) {
         connector = createConnector(conf);
         connectors.set(connector);
       }
@@ -514,10 +515,11 @@ public class CloudPersistenceProviderS3Impl {
   }
 
   private static CloudPersistenceProviderS3Impl createConnector(Configuration conf) {
-     CloudPersistenceProviderS3Impl connector = new CloudPersistenceProviderS3Impl(conf);
-     connectorCount.incrementAndGet();
-     System.out.println("New S3 connector created. Total connectors: "+connectorCount);
-     return connector;
+    CloudPersistenceProviderS3Impl connector = new CloudPersistenceProviderS3Impl(conf);
+    connectorCount.incrementAndGet();
+    String msg = "\rNew S3 connector created. Total connectors: " + connectorCount;
+    System.out.print(msg);
+    return connector;
   }
 
 }

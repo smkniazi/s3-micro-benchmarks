@@ -70,7 +70,7 @@ public class Worker implements Callable {
         printSpeed(test, bmStartTime, successfulOps);
       } catch (IOException e) {
         failedOps.incrementAndGet();
-        e.printStackTrace();
+        System.err.println(e);
       } finally {
         if ((System.currentTimeMillis() - bmStartTime) > conf.getBenchmarkDuration()) {
           break;

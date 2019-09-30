@@ -25,7 +25,7 @@ params=(
 # -usePrefixes 
 )
 
-command="java -jar ../target/s3-micro-benchmark-0.1-jar-with-dependencies.jar "
+command="java -Xmx20G -jar ../target/s3-micro-benchmark-0.1-jar-with-dependencies.jar "
 
 for i in ${params[@]}; do 
    command="$command $i" 
