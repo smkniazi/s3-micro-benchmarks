@@ -50,14 +50,27 @@ public class Namespace {
   }
 
   public void load() throws IOException, ClassNotFoundException {
+    System.out.println("Loading namespace from disk");
+
     File file = new File(conf.getDiskNSFile());
     if (file.exists()) {
       FileInputStream fileIn = new FileInputStream(file);
       ObjectInputStream objectIn = new ObjectInputStream(fileIn);
       blockID = (AtomicLong) objectIn.readObject();
-      namespace = (ArrayList<BucketObject>) objectIn.readObject();
+      int objsRead = 0;
+      try {
+        do {
+          Object obj = objectIn.readObject();
+          if (obj != null) {
+            namespace.add((BucketObject) obj);
+            String msg = "\rObjects Read: " + (objsRead++);
+            System.out.print(msg);
+          }
+        } while (true);
+      } catch (EOFException e) {
+      }
       objectIn.close();
-      System.out.println("Loaded namespace from file. Blocks: " + namespace.size() + " Max ID: " + blockID.get());
+      System.out.println("\nLoaded namespace from file. Blocks: " + namespace.size() + " Max ID: " + blockID.get());
     }
   }
 
@@ -70,7 +83,9 @@ public class Namespace {
     FileOutputStream fileOut = new FileOutputStream(file);
     ObjectOutputStream objectOut = new ObjectOutputStream(fileOut);
     objectOut.writeObject(blockID);
-    objectOut.writeObject(namespace);
+    for (BucketObject obj : namespace) {
+      objectOut.writeObject(obj);
+    }
     objectOut.close();
     System.out.println("Saved namespace to file");
   }
@@ -80,8 +95,12 @@ public class Namespace {
     synchronized (namespace) {
       id = blockID.incrementAndGet();
     }
-    long prefix = id / conf.getPrefixSize();
-    String blockKey = "folder-"+Long.toString(prefix)+"/"+id;
+
+    String blockKey = Long.toString(id);
+    if(conf.isUsePrefixes()){
+      long prefix = id / conf.getPrefixSize();
+      blockKey = "folder-" + Long.toString(prefix) + "/" + id;
+    }
 
     if (conf.getNumBuckets() > Short.MAX_VALUE) {
       throw new IllegalArgumentException("Too many buckets. Max: " + Short.MAX_VALUE);

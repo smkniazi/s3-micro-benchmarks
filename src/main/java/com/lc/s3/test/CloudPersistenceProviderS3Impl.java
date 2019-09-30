@@ -23,23 +23,27 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
 
   static final Log LOG = LogFactory.getLog(CloudPersistenceProviderS3Impl.class);
 
+  static final boolean SERVERLESS = false;
+
   private final AmazonS3 s3Client;
   private final static String bucketIDSeparator = ".";
   private ExecutorService threadPoolExecutor;
   private final Configuration conf;
   private TransferManager transfers;
 
-  CloudPersistenceProviderS3Impl(Configuration conf){
+  CloudPersistenceProviderS3Impl(Configuration conf) {
     this.conf = conf;
+
     this.s3Client = connect();
     initTransferManager();
   }
 
   private AmazonS3 connect() {
-    LOG.debug("HopsFS-Cloud. Connecting to S3. Region " + conf.getRegion());
+    System.out.println("HopsFS-Cloud. Connecting to S3. Region " + conf.getRegion());
     AmazonS3 s3client = AmazonS3ClientBuilder.standard()
             .withRegion(conf.getRegion())
             .build();
+    System.out.println("HopsFS-Cloud. Connected");
     return s3client;
   }
 
@@ -100,7 +104,7 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     try {
       List<Bucket> buckets = s3Client.listBuckets();
       LOG.debug("HopsFS-Cloud. Deleting all of the buckets for this user. Number of deletion " +
-              "threads "+ conf.getBucketDeletionThreads());
+              "threads " + conf.getBucketDeletionThreads());
       for (Bucket b : buckets) {
         if (b.getName().startsWith(prefix)) {
           emptyAndDeleteS3Bucket(b.getName(), tPool);
@@ -116,11 +120,16 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
    */
   @Override
   public void format() {
+    if (SERVERLESS) {
+      sleep();
+      return;
+    }
+
     ExecutorService tPool = Executors.newFixedThreadPool(conf.getBucketDeletionThreads());
     try {
       System.out.println("HopsFS-Cloud. Deleting all of the buckets used by HopsFS. Number of " +
               "deletion " +
-              "threads "+ conf.getBucketDeletionThreads());
+              "threads " + conf.getBucketDeletionThreads());
       for (int i = 0; i < conf.getNumBuckets(); i++) {
         emptyAndDeleteS3Bucket(getBucketDNSID(i), tPool);
       }
@@ -137,6 +146,10 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
 
   @Override
   public void checkAllBuckets() {
+    if (SERVERLESS) {
+      sleep();
+      return;
+    }
 
     final int retry = 300;  // keep trying until the newly created bucket is available
     for (int i = 0; i < conf.getNumBuckets(); i++) {
@@ -256,6 +269,11 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
   @Override
   public void uploadObject(short bucketID, String objectID, File object,
                            Map<String, String> metadata) throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return;
+    }
+
     try {
       long startTime = System.currentTimeMillis();
       String bucket = getBucketDNSID(bucketID);
@@ -289,6 +307,11 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
 
   @Override
   public boolean objectExists(short bucketID, String objectID) throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return true;
+    }
+
     try {
       long startTime = System.currentTimeMillis();
       boolean exists = s3Client.doesObjectExist(getBucketDNSID(bucketID), objectID);
@@ -320,6 +343,11 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
   @Override
   public Map<String, String> getUserMetaData(short bucketID, String objectID)
           throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return null;
+    }
+
     long startTime = System.currentTimeMillis();
     ObjectMetadata s3metadata = getS3ObjectMetadata(bucketID, objectID);
     Map<String, String> metadata = s3metadata.getUserMetadata();
@@ -330,6 +358,11 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
 
   @Override
   public long getObjectSize(short bucketID, String objectID) throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return 0;
+    }
+
     long startTime = System.currentTimeMillis();
     ObjectMetadata s3metadata = getS3ObjectMetadata(bucketID, objectID);
     long size = s3metadata.getContentLength();
@@ -340,6 +373,11 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
 
   @Override
   public void downloadObject(short bucketID, String objectID, File path) throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return;
+    }
+
     try {
       long startTime = System.currentTimeMillis();
       Download down = transfers.download(getBucketDNSID(bucketID), objectID, path);
@@ -358,6 +396,11 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
 
   @Override
   public List<String> getAll() throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return Collections.EMPTY_LIST;
+    }
+
     List<String> allBlocks = new ArrayList<String>();
     for (int i = 0; i < conf.getNumBuckets(); i++) {
       allBlocks.addAll(listBucket(getBucketDNSID(i)));
@@ -367,6 +410,11 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
 
   @Override
   public void deleteObject(short bucketID, String objectID) throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return;
+    }
+
     try {
       s3Client.deleteObject(getBucketDNSID(bucketID), objectID);
     } catch (AmazonServiceException up) {
@@ -415,5 +463,14 @@ public class CloudPersistenceProviderS3Impl implements CloudPersistenceProvider 
     }
 
     return listedKeys;
+  }
+
+  private void sleep(){
+    try {
+      Thread.sleep(10);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
+
   }
 }
