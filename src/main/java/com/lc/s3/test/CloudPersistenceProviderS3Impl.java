@@ -416,6 +416,27 @@ public class CloudPersistenceProviderS3Impl {
     }
   }
 
+  public int listDir(short bucketID, String  prefix) {
+    ListObjectsV2Request req =
+            new ListObjectsV2Request().withBucketName(getBucketDNSID(bucketID)).withPrefix(prefix);//.withMaxKeys(2);
+    ListObjectsV2Result result;
+    int count = 0;
+    do {
+      result = s3Client.listObjectsV2(req);
+
+      for (S3ObjectSummary objectSummary : result.getObjectSummaries()) {
+        count++;
+      }
+      // If there are more than maxKeys keys in the bucket, get a continuation token
+      // and list the next objects.
+      String token = result.getNextContinuationToken();
+//      System.out.println("Next Continuation Token: " + token);
+      req.setContinuationToken(token);
+    } while (result.isTruncated());
+
+    return count;
+  }
+
   public List<String> getAll() throws IOException {
     if (SERVERLESS) {
       sleep();

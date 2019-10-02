@@ -14,6 +14,7 @@ public class Namespace {
   private int index = 0;
   private Random rand = new Random(System.currentTimeMillis());
   private static Configuration conf;
+  private static long startID;
 
   private Namespace() {
   }
@@ -24,7 +25,8 @@ public class Namespace {
     }
 
     conf = config;
-    blockID = new AtomicLong(conf.getClientId() * 10000000);
+    startID = conf.getClientId() * 10000000;
+    blockID = new AtomicLong(startID);
     return ns;
   }
 
@@ -97,6 +99,14 @@ public class Namespace {
     System.out.println("Saved namespace to file");
   }
 
+  public BucketObject getRandomObj() {
+    synchronized (namespace) {
+      int randind = rand.nextInt(namespace.size());
+      BucketObject obj = namespace.get(randind);
+      return obj;
+    }
+  }
+
   public BucketObject newBucketObject() {
     long id = 0;
     synchronized (namespace) {
@@ -106,7 +116,7 @@ public class Namespace {
     String blockKey = Long.toString(id);
     if (conf.isUsePrefixes()) {
       long prefix = id / conf.getPrefixSize();
-      blockKey = prefix+"-folder/" + id;
+      blockKey = prefix + "-folder/" + id;
     }
 
     if (conf.getNumBuckets() > Short.MAX_VALUE) {
@@ -120,7 +130,7 @@ public class Namespace {
     metadata.put("metadata1", "metadata1-value");
     metadata.put("metadata2", "metadata2-value");
 
-    BucketObject obj = new BucketObject(bucketID, blockKey);
+    BucketObject obj = new BucketObject(bucketID, blockKey, id);
     obj.setMetadata(metadata);
 
     return obj;

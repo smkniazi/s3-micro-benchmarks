@@ -18,7 +18,6 @@ public class MicroBenchMain {
   private final Configuration conf = new Configuration();
   private AtomicInteger successfulOps = new AtomicInteger(0);
   private AtomicInteger failedOps = new AtomicInteger(0);
-  private static long lastOutput = 0;
   private Namespace namespace;
   private SynchronizedDescriptiveStatistics latency = new SynchronizedDescriptiveStatistics();
   Random rand = new Random(System.currentTimeMillis());
@@ -94,6 +93,7 @@ public class MicroBenchMain {
     System.out.println("\nStarting Test : " + test);
     successfulOps = new AtomicInteger(0);
     failedOps = new AtomicInteger(0);
+    latency.clear();
     startMicroBench(test);
 
     speedPrinter.shutdown();
@@ -111,7 +111,7 @@ public class MicroBenchMain {
 
   public List<Worker> createWorkers(S3Tests test, int count)
           throws InterruptedException, IOException {
-    List<Worker> workers = new ArrayList<Worker>();
+    List<Worker> workers = new ArrayList<>();
     for (int i = 0; i < count; i++) {
       Worker worker = new Worker(test, successfulOps, failedOps, latency,
               conf, namespace);
@@ -148,6 +148,14 @@ public class MicroBenchMain {
     long startTime = System.currentTimeMillis();
     while (!areAllWorksDead(allWorkers)
             && (System.currentTimeMillis() - startTime) < conf.getBenchmarkDuration()) {
+      Thread.sleep(1000);
+    }
+
+    for(Worker w : allWorkers){
+      w.dieDieDie();
+    }
+
+    while(areAllWorksDead(allWorkers)){
       Thread.sleep(1000);
     }
   }
@@ -232,8 +240,8 @@ public class MicroBenchMain {
       if (maxThroughput < opsCompleted) {
         maxThroughput = opsCompleted;
       }
-      System.out.println("Test: " + test + " Successful Ops: " +
-              successfulOps + "\tCurrent Speed: " + (long) opsCompleted + " ops/sec.");
+      System.out.println("\nTest: " + test + " Successful Ops: " +
+              successfulOps + " Current Speed: " + (long) opsCompleted + " ops/sec.");
     }
   }
 

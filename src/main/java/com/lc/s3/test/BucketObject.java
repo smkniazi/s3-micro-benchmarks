@@ -7,10 +7,12 @@ public class BucketObject implements Serializable {
   private String key;
   private short bucket;
   private Map<String, String> metadata;
+  private long blockID;
 
-  public BucketObject(short bucket, String key) {
+  public BucketObject(short bucket, String key, long blockID) {
     this.key = key;
     this.bucket = bucket;
+    this.blockID = blockID;
   }
 
   public String getKey() {
@@ -25,12 +27,16 @@ public class BucketObject implements Serializable {
     this.metadata = metadata;
   }
 
+  public long getBlockID() {
+    return blockID;
+  }
+
   public short getBucket() {
     return bucket;
   }
 
   @Override
   public int hashCode() {
-    return key.hashCode() + Short.hashCode(bucket);
+    return key.hashCode() + Short.hashCode(bucket) + Long.hashCode(blockID);
   }
 }

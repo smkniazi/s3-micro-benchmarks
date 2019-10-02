@@ -6,7 +6,7 @@ import org.kohsuke.args4j.Option;
 
 public class Configuration {
 
-  private final int numClientsDefault = 5;
+  private final int numClientsDefault = 1;
   @Option(name = "-numClients", usage = "Number of threads. Default: " + numClientsDefault)
   private int numClients = numClientsDefault;
 
@@ -28,7 +28,7 @@ public class Configuration {
   @Option(name = "-clientId", usage = "Id of this application. Default: " + clientIdDefault)
   private int clientId = clientIdDefault;
 
-  private final String bucketPrefixDefault = "hopsfs-s3-bm";
+  private final String bucketPrefixDefault = "s3.micro.benchmarks";
   @Option(name = "-bucketPrefix", usage = "Bucket prefix. Default: " + bucketPrefixDefault)
   private String bucketPrefix = bucketPrefixDefault;
 

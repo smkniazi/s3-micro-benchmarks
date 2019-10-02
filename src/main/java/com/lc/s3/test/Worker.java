@@ -38,7 +38,11 @@ public class Worker implements Runnable {
 
   @Override
   public void run() {
-    test(test);
+    try {
+      test(test);
+    } finally {
+      workDone = true;
+    }
   }
 
   private void test(S3Tests test) {
@@ -75,7 +79,6 @@ public class Worker implements Runnable {
       } finally {
       }
     }
-    workDone = true;
   }
 
   private void putTest() throws IOException {
@@ -116,8 +119,12 @@ public class Worker implements Runnable {
   }
 
   private void listTest() throws IOException {
-    IOException up = new IOException("not implemented yet");
-    throw up;
+    BucketObject obj = namespace.getRandomObj();
+    long prefix = obj.getBlockID()/conf.getPrefixSize();
+    String prefixStr = prefix + "-folder/";
+    int count = CloudPersistenceProviderS3Impl.getConnector(conf).listDir(obj.getBucket(),
+            prefixStr );
+    assert count > 0;
   }
 
   private void metadataTest() throws IOException {
@@ -152,7 +159,7 @@ public class Worker implements Runnable {
     return workDone;
   }
 
-  public void dieDieDie(){
+  public void dieDieDie() {
     run = false;
   }
 }
