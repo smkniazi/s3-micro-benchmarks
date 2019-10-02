@@ -9,7 +9,7 @@ import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Worker implements Callable {
+public class Worker implements Runnable {
   private final AtomicInteger successfulOps;
   private final AtomicInteger failedOps;
   private final SynchronizedDescriptiveStatistics latency;
@@ -36,9 +36,8 @@ public class Worker implements Callable {
   }
 
   @Override
-  public Object call() {
+  public void run() {
     test(test);
-    return null;
   }
 
   private void test(S3Tests test) {

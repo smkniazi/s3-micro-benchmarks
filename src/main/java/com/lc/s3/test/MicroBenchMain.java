@@ -100,14 +100,15 @@ public class MicroBenchMain {
             " Successful Ops: " + successfulOps +
             " Failed: " + failedOps +
             " Avg Latency: " + df2.format(avgLatency) + " ms" +
-            " Avg Speed: " + df2.format(avgSpeed) + " ops/sec" ;
+            " Avg Speed: " + df2.format(avgSpeed) + " ops/sec";
     blueColoredText(message);
-    writeResult(message+"\n");
+    writeResult(message + "\n");
   }
 
-  public List<Worker> createWorkers(S3Tests test) throws InterruptedException, IOException {
+  public List<Worker> createWorkers(S3Tests test, int count)
+          throws InterruptedException, IOException {
     List<Worker> workers = new ArrayList<Worker>();
-    for (int i = 0; i < conf.getNumClients(); i++) {
+    for (int i = 0; i < count; i++) {
       Worker worker = new Worker(test, successfulOps, failedOps, latency,
               conf, namespace);
       workers.add(worker);
@@ -116,8 +117,26 @@ public class MicroBenchMain {
   }
 
   public void startMicroBench(S3Tests test) throws InterruptedException, IOException {
-    List workers = createWorkers(test);
-    executor.invokeAll(workers); //blocking call
+    int started = 0;
+    List<Worker> allWorkers = new ArrayList<>():
+    int remaining = conf.getNumClients();
+    final int MAX_BATCH = conf.getWorkersStartBatchSize();
+    int currentBatch = 0;
+    do{
+      if(remaining > MAX_BATCH){
+        remaining -=  MAX_BATCH;
+        currentBatch = MAX_BATCH;
+      } else {
+        currentBatch = remaining;
+        remaining = 0;
+      }
+      List<Worker> batch = createWorkers(test, conf.getNumClients());
+      allWorkers.addAll(batch);
+      for(Worker w : batch){
+        executor.execute(w);
+      }
+      executor.invokeAll(workers); //blocking call
+    } while ( remaining > 0);
   }
 
   protected void redColoredText(String msg) {
@@ -131,7 +150,7 @@ public class MicroBenchMain {
   }
 
   private void ynprompt() throws IOException {
-    if(conf.isStartPrompt()) {
+    if (conf.isStartPrompt()) {
       System.out.println("Press Enter to start ");
       System.in.read();
     }
@@ -139,10 +158,10 @@ public class MicroBenchMain {
 
   private void notePramsToResultsFile() throws IOException {
     File results = new File(conf.getResultFile());
-    if(!results.exists()){
+    if (!results.exists()) {
       results.createNewFile();
     }
-    BufferedWriter writer = new BufferedWriter(new FileWriter(results,true));
+    BufferedWriter writer = new BufferedWriter(new FileWriter(results, true));
     writer.write(conf.getParams());
     writer.close();
   }

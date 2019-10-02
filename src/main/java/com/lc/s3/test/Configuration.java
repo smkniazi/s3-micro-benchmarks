@@ -69,67 +69,77 @@ public class Configuration {
 
   private final int objSizeDefault = 1024;
   @Option(name = "-objSize", usage = "Size of the objects in bytes uploaded to the cloud. " +
-          "Default: "+objSizeDefault)
+          "Default: " + objSizeDefault)
   private int objSize = objSizeDefault;
 
   private final boolean deleteExistingDataDefault = false;
-  @Option(name = "-deleteExistingData", usage = "Delete existing buckets. Default: "+deleteExistingDataDefault)
+  @Option(name = "-deleteExistingData", usage = "Delete existing buckets. Default: " + deleteExistingDataDefault)
   private boolean deleteExistingData = deleteExistingDataDefault;
 
   private final boolean saveNSToDiskDefault = false;
   @Option(name = "-saveNSToDisk", usage =
-          "Save and load namespace from disk. Default: "+saveNSToDiskDefault)
+          "Save and load namespace from disk. Default: " + saveNSToDiskDefault)
   private boolean saveNSToDisk = saveNSToDiskDefault;
 
   private final String diskNSFileDefault = "/tmp/namespace.bin";
-  @Option(name = "-diskNSFile", usage = "File path to save namespace. Default: "+diskNSFileDefault)
+  @Option(name = "-diskNSFile", usage = "File path to save namespace. Default: " + diskNSFileDefault)
   private String diskNSFile = diskNSFileDefault;
 
   @Option(name = "-help", usage = "Print usages")
   private boolean help = false;
 
   private final boolean testPutDefault = true;
-  @Option(name = "-testPut", usage = "Run put test Default: "+testPutDefault)
+  @Option(name = "-testPut", usage = "Run put test Default: " + testPutDefault)
   private boolean testPut = testPutDefault;
 
   private final boolean testGetDefault = false;
-  @Option(name = "-testGet", usage = "Run get test. Default: "+testGetDefault)
+  @Option(name = "-testGet", usage = "Run get test. Default: " + testGetDefault)
   private boolean testGet = testGetDefault;
 
   private final boolean testListDefault = false;
-  @Option(name = "-testList", usage = "Run list test. Default: "+testListDefault)
+  @Option(name = "-testList", usage = "Run list test. Default: " + testListDefault)
   private boolean testList = testListDefault;
 
   private final boolean testObjExistsDefault = false;
-  @Option(name = "-testObjExists", usage = "Run object exists test. Default: "+testObjExistsDefault)
+  @Option(name = "-testObjExists", usage = "Run object exists test. Default: " + testObjExistsDefault)
   private boolean testObjExists = testObjExistsDefault;
 
   private final boolean testDeleteDefault = false;
-  @Option(name = "-testDelete", usage = "Run delete test. Default: "+testDeleteDefault)
+  @Option(name = "-testDelete", usage = "Run delete test. Default: " + testDeleteDefault)
   private boolean testDelete = testDeleteDefault;
 
   private final boolean testMetadataDefault = false;
-  @Option(name = "-testGetMetaData", usage = "Run get obj metadata test. Default: "+testMetadataDefault)
+  @Option(name = "-testGetMetaData", usage = "Run get obj metadata test. Default: " + testMetadataDefault)
   private boolean testMetadata = testMetadataDefault;
 
   private final boolean disableConnectorSharingDefault = false;
-  @Option(name = "-disableConnectorSharing", usage = "Disable sharing S3 connector with the threads. Default: "+disableConnectorSharingDefault)
+  @Option(name = "-disableConnectorSharing", usage = "Disable sharing S3 connector with the threads. Default: " + disableConnectorSharingDefault)
   private boolean disableConnectorSharing = disableConnectorSharingDefault;
 
   private final boolean disableTransferManagerDefault = false;
   @Option(name = "-disableS3TransferManager", usage =
-          "Disable S3 Transfer manager. Default: "+disableTransferManagerDefault)
+          "Disable S3 Transfer manager. Default: " + disableTransferManagerDefault)
   private boolean disableS3TransferManager = disableTransferManagerDefault;
 
   private final boolean startPromptDefault = false;
   @Option(name = "-startPrompt", usage =
-          "Enable disable Y/N prompt. Default: "+startPromptDefault)
+          "Enable disable Y/N prompt. Default: " + startPromptDefault)
   private boolean startPrompt = startPromptDefault;
 
   private final String resultFileDefault = "/tmp/results.txt";
   @Option(name = "-resultFile", usage =
-          "Results file. Default: "+resultFileDefault)
+          "Results file. Default: " + resultFileDefault)
   private String resultFile = resultFileDefault;
+
+  private final int workersStartBatchSizeDefault = 10;
+  @Option(name = "-workersStartBatchSize", usage =
+          "Start workers in batches. Default: " + workersStartBatchSizeDefault)
+  private int workersStartBatchSize = workersStartBatchSizeDefault;
+
+  private final int workersBatchStartDelayDefault = 500;
+  @Option(name = "-workersBatchStartDelay", usage =
+          "Delay between starting worker batches. Default: " + workersBatchStartDelayDefault)
+  private int workersBatchStartDelay = workersBatchStartDelayDefault;
 
   public int getMaxUploadThreads() {
     return maxUploadThreads;
@@ -266,7 +276,15 @@ public class Configuration {
     return resultFile;
   }
 
-  public String getParams(){
+  public int getWorkersBatchStartDelay() {
+    return workersBatchStartDelay;
+  }
+
+  public int getWorkersStartBatchSize() {
+    return workersStartBatchSize;
+  }
+
+  public String getParams() {
     StringBuffer sb = new StringBuffer("");
 
     sb.append("______________________________________________").append("\n");
@@ -290,6 +308,8 @@ public class Configuration {
     sb.append("diskNSFile : ").append(diskNSFile).append("\n");
     sb.append("disableConnectorSharing : ").append(disableConnectorSharing).append("\n");
     sb.append("disableS3TransferManager : ").append(disableS3TransferManager).append("\n");
+    sb.append("workersStartBatchSize : ").append(workersStartBatchSize).append("\n");
+    sb.append("workersBatchStartDelay :  ").append(workersBatchStartDelay).append("\n");
 
     return sb.toString();
 
