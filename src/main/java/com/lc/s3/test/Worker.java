@@ -17,10 +17,11 @@ public class Worker implements Runnable {
   private final Configuration conf;
   private final S3Tests test;
   private int counter = 0;
-  private long bmStartTime = 0;
   private File tempPutFile;
   private File tempGetFile;
   private final Namespace namespace;
+  private boolean run = true;
+  private boolean workDone = false;
 
   public Worker(S3Tests test, AtomicInteger successfulOps, AtomicInteger failedOps,
                 SynchronizedDescriptiveStatistics lagency, Configuration conf,
@@ -41,9 +42,7 @@ public class Worker implements Runnable {
   }
 
   private void test(S3Tests test) {
-    bmStartTime = System.currentTimeMillis();
-    lastPrintTime = bmStartTime;
-    while (true) {
+    while (run) {
       try {
         long startTime = System.nanoTime();
         if (test == S3Tests.PUT) {
@@ -66,19 +65,17 @@ public class Worker implements Runnable {
         long opExeTime = (System.nanoTime() - startTime);
         latency.addValue(opExeTime);
         successfulOps.incrementAndGet();
-        printSpeed(test, bmStartTime, successfulOps);
       } catch (IOException e) {
         failedOps.incrementAndGet();
         e.printStackTrace();
       } catch (Throwable e) {
+        failedOps.incrementAndGet();
         e.printStackTrace();
         throw e;
       } finally {
-        if ((System.currentTimeMillis() - bmStartTime) > conf.getBenchmarkDuration()) {
-          break;
-        }
       }
     }
+    workDone = true;
   }
 
   private void putTest() throws IOException {
@@ -151,19 +148,12 @@ public class Worker implements Runnable {
     }
   }
 
+  public boolean isDead() {
+    return workDone;
+  }
 
-  static long lastPrintTime = System.currentTimeMillis();
-
-  private synchronized static void printSpeed(S3Tests test, long startTime,
-                                              AtomicInteger successfulOps) {
-    long curTime = System.currentTimeMillis();
-    if ((curTime - lastPrintTime) > 5000) {
-      long timeElapsed = (System.currentTimeMillis() - startTime);
-      double speed = (successfulOps.get() / (double) timeElapsed) * 1000;
-      System.out.println("Test: " + test + " Successful Ops: " + successfulOps + "\tSpeed: " + (long) speed +
-              " ops/sec.");
-      lastPrintTime = System.currentTimeMillis();
-    }
+  public void dieDieDie(){
+    run = false;
   }
 }
 

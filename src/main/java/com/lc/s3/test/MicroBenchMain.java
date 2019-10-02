@@ -40,7 +40,6 @@ public class MicroBenchMain {
 
     CloudPersistenceProviderS3Impl.getConnector(conf).createBuckets();
 
-
     ynprompt();
 
     CloudPersistenceProviderS3Impl.getConnector(conf).checkAllBuckets();
@@ -91,16 +90,13 @@ public class MicroBenchMain {
     System.out.println("\nStarting Test : " + test);
     successfulOps = new AtomicInteger(0);
     failedOps = new AtomicInteger(0);
-    long startTime = System.currentTimeMillis();
     startMicroBench(test);
-    long totExeTime = (System.currentTimeMillis() - startTime);
-    double avgSpeed = (((double) successfulOps.get() / (double) totExeTime) * 1000);
     double avgLatency = latency.getMean() / 1000000;
     String message = "Test: " + test +
             " Successful Ops: " + successfulOps +
             " Failed: " + failedOps +
             " Avg Latency: " + df2.format(avgLatency) + " ms" +
-            " Avg Speed: " + df2.format(avgSpeed) + " ops/sec";
+            " Max Speed: " + maxThroughput + " ops/sec";
     blueColoredText(message);
     writeResult(message + "\n");
   }
@@ -117,27 +113,62 @@ public class MicroBenchMain {
   }
 
   public void startMicroBench(S3Tests test) throws InterruptedException, IOException {
-    int started = 0;
-    List<Worker> allWorkers = new ArrayList<>():
+    List<Worker> allWorkers = new ArrayList<>();
     int remaining = conf.getNumClients();
     final int MAX_BATCH = conf.getWorkersStartBatchSize();
-    int currentBatch = 0;
-    do{
-      if(remaining > MAX_BATCH){
-        remaining -=  MAX_BATCH;
+    int currentBatch;
+    do {
+      if (remaining > MAX_BATCH) {
+        remaining -= MAX_BATCH;
         currentBatch = MAX_BATCH;
       } else {
         currentBatch = remaining;
         remaining = 0;
       }
-      List<Worker> batch = createWorkers(test, conf.getNumClients());
+
+      List<Worker> batch = createWorkers(test, currentBatch);
       allWorkers.addAll(batch);
-      for(Worker w : batch){
+      for (Worker w : batch) {
         executor.execute(w);
       }
-      executor.invokeAll(workers); //blocking call
-    } while ( remaining > 0);
+      Thread.sleep(conf.getWorkersBatchStartDelay());
+    } while (remaining > 0);
+
+    //All workers started
+    //wait for the benchmark to finish
+    long startTime = System.currentTimeMillis();
+    while (!areAllWorksDead(allWorkers)
+            && (System.currentTimeMillis() - startTime) < conf.getBenchmarkDuration()) {
+      Thread.sleep(1000);
+      printSpeed(test);
+    }
   }
+
+  private boolean areAllWorksDead(List<Worker> workers) {
+    boolean allDead = false;
+
+    for (Worker worker : workers) {
+      if (!worker.isDead()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  long previousCount = 0;
+  long maxThroughput = 0;
+
+  // Supposed to be called every second
+  private synchronized void printSpeed(S3Tests test) {
+    long opsCompleted = (successfulOps.get()) - previousCount;
+    previousCount = successfulOps.get();
+    if (maxThroughput < opsCompleted) {
+      maxThroughput = opsCompleted;
+    }
+    System.out.println("Test: " + test + " Successful Ops: " +
+            successfulOps + "\tCurrent Speed: " + (long) opsCompleted + " ops/sec.");
+  }
+
 
   protected void redColoredText(String msg) {
     System.out.println((char) 27 + "[31m" + msg);
