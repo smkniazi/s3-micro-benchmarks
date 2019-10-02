@@ -106,7 +106,7 @@ public class Namespace {
     String blockKey = Long.toString(id);
     if (conf.isUsePrefixes()) {
       long prefix = id / conf.getPrefixSize();
-      blockKey = "folder-" + Long.toString(prefix) + "/" + id;
+      blockKey = prefix+"-folder/" + id;
     }
 
     if (conf.getNumBuckets() > Short.MAX_VALUE) {

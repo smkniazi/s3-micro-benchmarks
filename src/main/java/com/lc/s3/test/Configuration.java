@@ -136,7 +136,7 @@ public class Configuration {
           "Start workers in batches. Default: " + workersStartBatchSizeDefault)
   private int workersStartBatchSize = workersStartBatchSizeDefault;
 
-  private final int workersBatchStartDelayDefault = 500;
+  private final int workersBatchStartDelayDefault = 1000;
   @Option(name = "-workersBatchStartDelay", usage =
           "Delay between starting worker batches. Default: " + workersBatchStartDelayDefault)
   private int workersBatchStartDelay = workersBatchStartDelayDefault;

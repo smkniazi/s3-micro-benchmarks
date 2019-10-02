@@ -5,7 +5,7 @@ params=(
 -numClients 5 
 -prefixSize 9223372036854775807 
 -bucketDeletionThreads 100
--bucketPrefix salman-bm 
+-bucketPrefix salman.bm 
 -clientId 0 
 #-deleteExistingData 
 # -disableConnectorSharing 
@@ -15,15 +15,17 @@ params=(
 -numBuckets 1 
 -objSize 1024 
 -testPut 
-# -saveNSToDisk 
-# -testDelete 
-# -testGet 
-# -testGetMetaData 
-# -testList 
-# -testObjExists 
+#-testDelete 
+#-testGet 
+#-testGetMetaData 
+#-testList 
+#-testObjExists 
 -tmpFolder "/mnt/ssd" 
-# -usePrefixes 
+#-usePrefixes 
 #-startPrompt
+#-workersStartBatchSize 10
+#-workersBatchStartDelay 1000
+#-saveNSToDisk 
 )
 
 command="java -Xmx20G -jar ../target/s3-micro-benchmark-0.1-jar-with-dependencies.jar "

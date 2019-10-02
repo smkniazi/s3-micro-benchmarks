@@ -24,6 +24,7 @@ public class MicroBenchMain {
   Random rand = new Random(System.currentTimeMillis());
   private static DecimalFormat df2 = new DecimalFormat("#.##");
   ExecutorService executor = null;
+  private long maxThroughput = 0;
 
   public void startApplication(String[] args) throws Exception {
 
@@ -87,10 +88,17 @@ public class MicroBenchMain {
   }
 
   private void test(S3Tests test) throws IOException, InterruptedException {
+    SpeedPrinter speedPrinter = new SpeedPrinter(test);
+    speedPrinter.start();
+
     System.out.println("\nStarting Test : " + test);
     successfulOps = new AtomicInteger(0);
     failedOps = new AtomicInteger(0);
     startMicroBench(test);
+
+    speedPrinter.shutdown();
+    speedPrinter.join();
+
     double avgLatency = latency.getMean() / 1000000;
     String message = "Test: " + test +
             " Successful Ops: " + successfulOps +
@@ -131,6 +139,7 @@ public class MicroBenchMain {
       for (Worker w : batch) {
         executor.execute(w);
       }
+      System.out.println("Started batch of " + currentBatch + " worker threads ");
       Thread.sleep(conf.getWorkersBatchStartDelay());
     } while (remaining > 0);
 
@@ -140,7 +149,6 @@ public class MicroBenchMain {
     while (!areAllWorksDead(allWorkers)
             && (System.currentTimeMillis() - startTime) < conf.getBenchmarkDuration()) {
       Thread.sleep(1000);
-      printSpeed(test);
     }
   }
 
@@ -153,20 +161,6 @@ public class MicroBenchMain {
       }
     }
     return true;
-  }
-
-  long previousCount = 0;
-  long maxThroughput = 0;
-
-  // Supposed to be called every second
-  private synchronized void printSpeed(S3Tests test) {
-    long opsCompleted = (successfulOps.get()) - previousCount;
-    previousCount = successfulOps.get();
-    if (maxThroughput < opsCompleted) {
-      maxThroughput = opsCompleted;
-    }
-    System.out.println("Test: " + test + " Successful Ops: " +
-            successfulOps + "\tCurrent Speed: " + (long) opsCompleted + " ops/sec.");
   }
 
 
@@ -202,6 +196,45 @@ public class MicroBenchMain {
     BufferedWriter writer = new BufferedWriter(new FileWriter(results, true));
     writer.write(res);
     writer.close();
+  }
+
+  class SpeedPrinter extends Thread {
+    private long previousCount = 0;
+    private boolean run = true;
+    private S3Tests test;
+
+    public void shutdown() {
+      run = false;
+    }
+
+    public SpeedPrinter(S3Tests test) {
+      this.test = test;
+      this.previousCount = 0;
+      maxThroughput = 0;
+    }
+
+    @Override
+    public void run() {
+      while (run) {
+        try {
+          Thread.sleep(1000);
+        } catch (InterruptedException e) {
+          e.printStackTrace();
+        }
+        printSpeed();
+      }
+    }
+
+    // Supposed to be called every second
+    private void printSpeed() {
+      long opsCompleted = (successfulOps.get()) - previousCount;
+      previousCount = successfulOps.get();
+      if (maxThroughput < opsCompleted) {
+        maxThroughput = opsCompleted;
+      }
+      System.out.println("Test: " + test + " Successful Ops: " +
+              successfulOps + "\tCurrent Speed: " + (long) opsCompleted + " ops/sec.");
+    }
   }
 
 }
