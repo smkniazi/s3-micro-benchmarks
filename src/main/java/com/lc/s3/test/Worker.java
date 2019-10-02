@@ -56,7 +56,7 @@ public class Worker implements Callable {
         } else if (test == S3Tests.EXISTS) {
           existTest();
         } else if (test == S3Tests.DELETE) {
-          if (deleteTest()){
+          if (!deleteTest()) {
             return;
           }
         } else if (test == S3Tests.LIST) {
@@ -70,7 +70,10 @@ public class Worker implements Callable {
         printSpeed(test, bmStartTime, successfulOps);
       } catch (IOException e) {
         failedOps.incrementAndGet();
-        System.err.println(e);
+        e.printStackTrace();
+      } catch (Throwable e) {
+        e.printStackTrace();
+        throw e;
       } finally {
         if ((System.currentTimeMillis() - bmStartTime) > conf.getBenchmarkDuration()) {
           break;
@@ -82,7 +85,7 @@ public class Worker implements Callable {
   private void putTest() throws IOException {
     BucketObject obj = namespace.newBucketObject();
     Map<String, String> metadata = obj.getMetadata();
-    if(conf.isDisableS3TransferManager()){
+    if (conf.isDisableS3TransferManager()) {
       CloudPersistenceProviderS3Impl.getConnector(conf)
               .uploadObject(obj.getBucket(), obj.getKey(), tempPutFile, metadata);
     } else {
@@ -93,22 +96,22 @@ public class Worker implements Callable {
   }
 
   private void getTest() throws IOException {
-    BucketObject obj = namespace.getRandomObject();
+    BucketObject obj = namespace.getObject();
     CloudPersistenceProviderS3Impl.getConnector(conf)
             .downloadObject(obj.getBucket(), obj.getKey(), tempGetFile);
   }
 
   private void existTest() throws IOException {
-    BucketObject obj = namespace.getRandomObject();
-    if(!CloudPersistenceProviderS3Impl.getConnector(conf)
-            .objectExists(obj.getBucket(), obj.getKey())){
+    BucketObject obj = namespace.getObject();
+    if (!CloudPersistenceProviderS3Impl.getConnector(conf)
+            .objectExists(obj.getBucket(), obj.getKey())) {
       System.err.println("Unexpected. Object not found");
     }
   }
 
   private boolean deleteTest() throws IOException {
     BucketObject obj = namespace.popLast();
-    if( obj != null) {
+    if (obj != null) {
       CloudPersistenceProviderS3Impl.getConnector(conf)
               .deleteObject(obj.getBucket(), obj.getKey());
       return true;
@@ -122,9 +125,9 @@ public class Worker implements Callable {
   }
 
   private void metadataTest() throws IOException {
-    BucketObject obj = namespace.getRandomObject();
-    if(CloudPersistenceProviderS3Impl.getConnector(conf)
-           .getUserMetaData(obj.getBucket(), obj.getKey()) == null){
+    BucketObject obj = namespace.getObject();
+    if (CloudPersistenceProviderS3Impl.getConnector(conf)
+            .getUserMetaData(obj.getBucket(), obj.getKey()) == null) {
       System.err.println("Unexpected. Object not found.");
     }
   }
@@ -134,7 +137,7 @@ public class Worker implements Callable {
     tempPutFile = new File(conf.getTmpFolder() + File.separator + key.toString());
 
     if (!tempPutFile.createNewFile()) {
-      throw new RuntimeException("Unable to create temp file. "+tempPutFile);
+      throw new RuntimeException("Unable to create temp file. " + tempPutFile);
     }
 
     byte buffer[] = new byte[conf.getObjSize()];
@@ -150,7 +153,6 @@ public class Worker implements Callable {
   }
 
 
-
   static long lastPrintTime = System.currentTimeMillis();
 
   private synchronized static void printSpeed(S3Tests test, long startTime,
@@ -159,7 +161,7 @@ public class Worker implements Callable {
     if ((curTime - lastPrintTime) > 5000) {
       long timeElapsed = (System.currentTimeMillis() - startTime);
       double speed = (successfulOps.get() / (double) timeElapsed) * 1000;
-      System.out.println("Test: " + test + " Successful Ops: " + successfulOps + "\tSpeed: " + (long)speed +
+      System.out.println("Test: " + test + " Successful Ops: " + successfulOps + "\tSpeed: " + (long) speed +
               " ops/sec.");
       lastPrintTime = System.currentTimeMillis();
     }

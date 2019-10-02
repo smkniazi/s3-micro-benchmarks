@@ -121,6 +121,16 @@ public class Configuration {
           "Disable S3 Transfer manager. Default: "+disableTransferManagerDefault)
   private boolean disableS3TransferManager = disableTransferManagerDefault;
 
+  private final boolean startPromptDefault = false;
+  @Option(name = "-startPrompt", usage =
+          "Enable disable Y/N prompt. Default: "+startPromptDefault)
+  private boolean startPrompt = startPromptDefault;
+
+  private final String resultFileDefault = "/tmp/results.txt";
+  @Option(name = "-resultFile", usage =
+          "Results file. Default: "+resultFileDefault)
+  private String resultFile = resultFileDefault;
+
   public int getMaxUploadThreads() {
     return maxUploadThreads;
   }
@@ -246,5 +256,42 @@ public class Configuration {
 
   public boolean isDisableS3TransferManager() {
     return disableS3TransferManager;
+  }
+
+  public boolean isStartPrompt() {
+    return startPrompt;
+  }
+
+  public String getResultFile() {
+    return resultFile;
+  }
+
+  public String getParams(){
+    StringBuffer sb = new StringBuffer("");
+
+    sb.append("______________________________________________").append("\n");
+    sb.append("numClients : ").append(numClients).append("\n");
+    sb.append("usePrefixes : ").append(usePrefixes).append("\n");
+    sb.append("prefixSize : ").append(prefixSize).append("\n");
+    sb.append("benchmarkDuration : ").append(benchmarkDuration).append("\n");
+    sb.append("clientId : ").append(clientId).append("\n");
+    sb.append("bucketPrefix : ").append(bucketPrefix).append("\n");
+    sb.append("regionStr : ").append(regionStr).append("\n");
+    sb.append("numBuckets : ").append(numBuckets).append("\n");
+    sb.append("bucketDeletionThreads : ").append(bucketDeletionThreads).append("\n");
+    sb.append("maxUploadThreads : ").append(maxUploadThreads).append("\n");
+    sb.append("threadlTTL : ").append(threadlTTL).append("\n");
+    sb.append("multiPartSize : ").append(multiPartSize).append("\n");
+    sb.append("multiPartThreshold : ").append(multiPartThreshold).append("\n");
+    sb.append("tmpFolder : ").append(tmpFolder).append("\n");
+    sb.append("objSize : ").append(objSize).append("\n");
+    sb.append("deleteExistingData : ").append(deleteExistingData).append("\n");
+    sb.append("saveNSToDisk : ").append(saveNSToDisk).append("\n");
+    sb.append("diskNSFile : ").append(diskNSFile).append("\n");
+    sb.append("disableConnectorSharing : ").append(disableConnectorSharing).append("\n");
+    sb.append("disableS3TransferManager : ").append(disableS3TransferManager).append("\n");
+
+    return sb.toString();
+
   }
 }

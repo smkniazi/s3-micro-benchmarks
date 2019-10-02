@@ -4,14 +4,14 @@ params=(
 -bmDuration 20000 
 -numClients 5 
 -prefixSize 9223372036854775807 
--bucketDeletionThreads 40 
+-bucketDeletionThreads 100
 -bucketPrefix salman-bm 
 -clientId 0 
 #-deleteExistingData 
 # -disableConnectorSharing 
 # -disableS3TransferManager 
 # -maxUploadThreads 10 
--diskNSFile /tmp/namespace.bin 
+-diskNSFile /mnt/ssd/namespace.bin 
 -numBuckets 1 
 -objSize 1024 
 -testPut 
@@ -21,8 +21,9 @@ params=(
 # -testGetMetaData 
 # -testList 
 # -testObjExists 
--tmpFolder "/tmp" 
+-tmpFolder "/mnt/ssd" 
 # -usePrefixes 
+#-startPrompt
 )
 
 command="java -Xmx20G -jar ../target/s3-micro-benchmark-0.1-jar-with-dependencies.jar "

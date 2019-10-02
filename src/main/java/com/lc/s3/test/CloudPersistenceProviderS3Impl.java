@@ -182,7 +182,7 @@ public class CloudPersistenceProviderS3Impl {
     }
   }
 
-  private void createBuckets() {
+  public void createBuckets() {
     for (int i = 0; i < conf.getNumBuckets(); i++) {
       createS3Bucket(getBucketDNSID(i));
     }

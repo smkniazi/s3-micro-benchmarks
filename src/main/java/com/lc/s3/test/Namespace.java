@@ -11,6 +11,7 @@ public class Namespace {
   private static Namespace ns;
   private static AtomicLong blockID;
   private List<BucketObject> namespace = new ArrayList<>();
+  private int index = 0;
   private Random rand = new Random(System.currentTimeMillis());
   private static Configuration conf;
 
@@ -33,10 +34,16 @@ public class Namespace {
     }
   }
 
-  public BucketObject getRandomObject() {
+  public BucketObject getObject() {
     synchronized (namespace) {
-      int index = rand.nextInt(namespace.size());
-      return namespace.get(index);
+      if (namespace.size() > 0) {
+        if (index >= namespace.size()) {
+          index = 0;
+        }
+        return namespace.get(index++);
+      } else {
+        return null;
+      }
     }
   }
 
@@ -97,7 +104,7 @@ public class Namespace {
     }
 
     String blockKey = Long.toString(id);
-    if(conf.isUsePrefixes()){
+    if (conf.isUsePrefixes()) {
       long prefix = id / conf.getPrefixSize();
       blockKey = "folder-" + Long.toString(prefix) + "/" + id;
     }

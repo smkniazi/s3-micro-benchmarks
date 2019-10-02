@@ -1,5 +1,8 @@
 package com.lc.s3.test;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -20,16 +23,25 @@ public class MicroBenchMain {
   private SynchronizedDescriptiveStatistics latency = new SynchronizedDescriptiveStatistics();
   Random rand = new Random(System.currentTimeMillis());
   private static DecimalFormat df2 = new DecimalFormat("#.##");
+  ExecutorService executor = null;
 
   public void startApplication(String[] args) throws Exception {
+
     conf.parseArgs(args);
 
     namespace = Namespace.createNamespace(conf);
+    executor = Executors.newFixedThreadPool(conf.getNumClients());
+    notePramsToResultsFile();
 
     if (conf.isDeleteExistingData()) {
       CloudPersistenceProviderS3Impl.getConnector(conf).format();
       namespace.deleteLocalCopy();
     }
+
+    CloudPersistenceProviderS3Impl.getConnector(conf).createBuckets();
+
+
+    ynprompt();
 
     CloudPersistenceProviderS3Impl.getConnector(conf).checkAllBuckets();
 
@@ -46,6 +58,7 @@ public class MicroBenchMain {
     if (conf.isSaveNSToDisk()) {
       namespace.save();
     }
+    System.exit(0);
   }
 
   private void runTests() throws IOException, InterruptedException {
@@ -83,13 +96,13 @@ public class MicroBenchMain {
     long totExeTime = (System.currentTimeMillis() - startTime);
     double avgSpeed = (((double) successfulOps.get() / (double) totExeTime) * 1000);
     double avgLatency = latency.getMean() / 1000000;
-    blueColoredText("Test: " + S3Tests.PUT +
+    String message = "Test: " + test +
             " Successful Ops: " + successfulOps +
             " Failed: " + failedOps +
-            " Avg Latency: " + df2.format(avgLatency) + " ms"+
-            " Avg Speed: " + df2.format(avgSpeed) +" ops/sec"
-    );
-
+            " Avg Latency: " + df2.format(avgLatency) + " ms" +
+            " Avg Speed: " + df2.format(avgSpeed) + " ops/sec" ;
+    blueColoredText(message);
+    writeResult(message+"\n");
   }
 
   public List<Worker> createWorkers(S3Tests test) throws InterruptedException, IOException {
@@ -103,11 +116,8 @@ public class MicroBenchMain {
   }
 
   public void startMicroBench(S3Tests test) throws InterruptedException, IOException {
-    ExecutorService executor = null;
-    executor = Executors.newFixedThreadPool(conf.getNumClients());
     List workers = createWorkers(test);
     executor.invokeAll(workers); //blocking call
-    executor.shutdown();
   }
 
   protected void redColoredText(String msg) {
@@ -120,5 +130,28 @@ public class MicroBenchMain {
     System.out.print((char) 27 + "[0m");
   }
 
+  private void ynprompt() throws IOException {
+    if(conf.isStartPrompt()) {
+      System.out.println("Press Enter to start ");
+      System.in.read();
+    }
+  }
+
+  private void notePramsToResultsFile() throws IOException {
+    File results = new File(conf.getResultFile());
+    if(!results.exists()){
+      results.createNewFile();
+    }
+    BufferedWriter writer = new BufferedWriter(new FileWriter(results,true));
+    writer.write(conf.getParams());
+    writer.close();
+  }
+
+  private void writeResult(String res) throws IOException {
+    File results = new File(conf.getResultFile());
+    BufferedWriter writer = new BufferedWriter(new FileWriter(results, true));
+    writer.write(res);
+    writer.close();
+  }
 
 }
