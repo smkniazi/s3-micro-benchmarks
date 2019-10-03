@@ -15,9 +15,10 @@ public class Configuration {
           "root. Default: " + usePrefixesDefault)
   private boolean usePrefixes = usePrefixesDefault;
 
-  private final long prefixSizeDefault = Long.MAX_VALUE;
-  @Option(name = "-prefixSize", usage = "Max number of element in each prefix. Default: " + prefixSizeDefault)
-  private long prefixSize = prefixSizeDefault;
+  private final int noOfPrefixesDefault = 10;
+  @Option(name = "-noOfPrefixes", usage = "No of prefixes " +
+          ". Default: " + noOfPrefixesDefault)
+  private int noOfPrefixes = noOfPrefixesDefault;
 
   private final long benchmarkDurationDefault = 10000;
   @Option(name = "-bmDuration", usage = "For how long the bench mark should run. Time in ms. " +
@@ -228,10 +229,6 @@ public class Configuration {
     return diskNSFile;
   }
 
-  public long getPrefixSize() {
-    return prefixSize;
-  }
-
   public boolean isTestPut() {
     return testPut;
   }
@@ -284,13 +281,17 @@ public class Configuration {
     return workersStartBatchSize;
   }
 
+  public int getNoOfPrefixes() {
+    return noOfPrefixes;
+  }
+
   public String getParams() {
     StringBuffer sb = new StringBuffer("");
 
     sb.append("______________________________________________").append("\n");
     sb.append("numClients : ").append(numClients).append("\n");
     sb.append("usePrefixes : ").append(usePrefixes).append("\n");
-    sb.append("prefixSize : ").append(prefixSize).append("\n");
+    sb.append("noOfPrefixes : ").append(noOfPrefixes).append("\n");
     sb.append("benchmarkDuration : ").append(benchmarkDuration).append("\n");
     sb.append("clientId : ").append(clientId).append("\n");
     sb.append("bucketPrefix : ").append(bucketPrefix).append("\n");

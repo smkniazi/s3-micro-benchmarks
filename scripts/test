@@ -2,12 +2,12 @@
 
 params=(
 -bmDuration 20000 
--numClients 200
--prefixSize 1000
+-numClients 100
+-noOfPrefixes 1
 -bucketDeletionThreads 100
 -bucketPrefix salman.s3.micro.benchmarks 
 -clientId 0 
-#-deleteExistingData 
+-deleteExistingData 
 -disableConnectorSharing 
 -disableS3TransferManager 
 # -maxUploadThreads 10 
@@ -26,6 +26,7 @@ params=(
 -workersStartBatchSize 10
 -workersBatchStartDelay 1000
 #-saveNSToDisk 
+-region eu-west-1
 )
 
 command="java -Xmx20G -jar ../target/s3-micro-benchmark-0.1-jar-with-dependencies.jar "

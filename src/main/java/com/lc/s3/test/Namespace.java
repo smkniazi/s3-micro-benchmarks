@@ -11,6 +11,7 @@ public class Namespace {
   private static Namespace ns;
   private static AtomicLong blockID;
   private List<BucketObject> namespace = new ArrayList<>();
+  private List<String> prefixes = new ArrayList<>();
   private int index = 0;
   private Random rand = new Random(System.currentTimeMillis());
   private static Configuration conf;
@@ -27,7 +28,17 @@ public class Namespace {
     conf = config;
     startID = conf.getClientId() * 10000000;
     blockID = new AtomicLong(startID);
+    ns.initPrefixes();
     return ns;
+  }
+
+  public void initPrefixes(){
+    if(conf.isUsePrefixes()){
+      for(int i = 0; i < conf.getNoOfPrefixes(); i++){
+        UUID uuid = UUID.randomUUID();
+        prefixes.add(uuid.toString()+"/");
+      }
+    }
   }
 
   public void put(BucketObject obj) {
@@ -109,20 +120,18 @@ public class Namespace {
 
   public BucketObject newBucketObject() {
     long id = 0;
+    String prefix = "";
     synchronized (namespace) {
       id = blockID.incrementAndGet();
     }
 
-    String blockKey = Long.toString(id);
     if (conf.isUsePrefixes()) {
-      long prefix = id / conf.getPrefixSize();
-      blockKey = prefix + "-folder/" + id;
+      prefix = prefixes.get(rand.nextInt(prefixes.size()));
     }
 
     if (conf.getNumBuckets() > Short.MAX_VALUE) {
       throw new IllegalArgumentException("Too many buckets. Max: " + Short.MAX_VALUE);
     }
-
 
     short bucketID = (short) rand.nextInt(conf.getNumBuckets());
 
@@ -130,7 +139,7 @@ public class Namespace {
     metadata.put("metadata1", "metadata1-value");
     metadata.put("metadata2", "metadata2-value");
 
-    BucketObject obj = new BucketObject(bucketID, blockKey, id);
+    BucketObject obj = new BucketObject(bucketID, prefix, id);
     obj.setMetadata(metadata);
 
     return obj;

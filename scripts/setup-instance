@@ -2,10 +2,10 @@
 #https://stackoverflow.com/questions/11342167/how-to-increase-ulimit-on-amazon-ec2-instance
 
 
-echo "ec2-user       soft  nofile  20000" >> /etc/security/limits.conf
-echo "ec2-user       hard  nofile  20000" >> /etc/security/limits.conf
-echo "ec2-user       soft  nproc  20000" >> /etc/security/limits.conf
-echo "ec2-user       hard  nproc  20000" >> /etc/security/limits.conf
+echo "ec2-user       soft  nofile  64000" >> /etc/security/limits.conf
+echo "ec2-user       hard  nofile  64000" >> /etc/security/limits.conf
+echo "ec2-user       soft  nproc   64000" >> /etc/security/limits.conf
+echo "ec2-user       hard  nproc   64000" >> /etc/security/limits.conf
 
 yum install java -y
 

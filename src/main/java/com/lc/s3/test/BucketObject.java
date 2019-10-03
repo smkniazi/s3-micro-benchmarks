@@ -4,19 +4,19 @@ import java.io.Serializable;
 import java.util.Map;
 
 public class BucketObject implements Serializable {
-  private String key;
   private short bucket;
+  private String prefix;
   private Map<String, String> metadata;
   private long blockID;
 
-  public BucketObject(short bucket, String key, long blockID) {
-    this.key = key;
+  public BucketObject(short bucket, String prefix, long blockID) {
+    this.prefix = prefix;
     this.bucket = bucket;
     this.blockID = blockID;
   }
 
-  public String getKey() {
-    return key;
+  public String getPrefix() {
+    return prefix;
   }
 
   public Map<String, String> getMetadata() {
@@ -35,8 +35,11 @@ public class BucketObject implements Serializable {
     return bucket;
   }
 
+  public String getKey() {
+    return prefix+blockID;
+  }
   @Override
   public int hashCode() {
-    return key.hashCode() + Short.hashCode(bucket) + Long.hashCode(blockID);
+    return prefix.hashCode() + Short.hashCode(bucket) + Long.hashCode(blockID);
   }
 }

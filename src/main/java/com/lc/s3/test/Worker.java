@@ -120,8 +120,7 @@ public class Worker implements Runnable {
 
   private void listTest() throws IOException {
     BucketObject obj = namespace.getRandomObj();
-    long prefix = obj.getBlockID()/conf.getPrefixSize();
-    String prefixStr = prefix + "-folder/";
+    String prefixStr = obj.getPrefix();
     int count = CloudPersistenceProviderS3Impl.getConnector(conf).listDir(obj.getBucket(),
             prefixStr );
     assert count > 0;

@@ -7,8 +7,8 @@ public class Main {
   }
 
   private static void test() throws Exception {
-    String []args = {"-deleteExistingData","-usePrefixes", "-prefixSize", "2", "-testList",
-            "-prefixSize", "50"};
+    String []args = {"-deleteExistingData","-usePrefixes", "-noOfPrefixes", "2", "-testList",
+            };
     new MicroBenchMain().startApplication(args);
   }
 }
