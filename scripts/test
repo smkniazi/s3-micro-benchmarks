@@ -4,7 +4,7 @@ params=(
 -bmDuration 20000 
 -numClients 100
 -noOfPrefixes 1
--bucketDeletionThreads 100
+-bucketDeletionThreads 200
 -bucketPrefix salman.s3.micro.benchmarks 
 -clientId 0 
 -deleteExistingData 
@@ -18,7 +18,7 @@ params=(
 #-testDelete 
 -testGet 
 #-testGetMetaData 
--testList 
+#-testList 
 #-testObjExists 
 -tmpFolder "/mnt/ssd" 
 -usePrefixes 

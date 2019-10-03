@@ -61,6 +61,11 @@ public class MicroBenchMain {
   }
 
   private void runTests() throws IOException, InterruptedException {
+
+    if(conf.getBenchmarkDuration() <= 0){
+      return;
+    }
+
     if (conf.isTestPut()) {
       test(S3Tests.PUT);
     }
@@ -100,7 +105,7 @@ public class MicroBenchMain {
     speedPrinter.join();
 
     double avgLatency = latency.getMean() / 1000000;
-    String message = "Test: " + test +
+    String message = "\nTest: " + test +
             " Successful Ops: " + successfulOps +
             " Failed: " + failedOps +
             " Avg Latency: " + df2.format(avgLatency) + " ms" +
@@ -240,8 +245,15 @@ public class MicroBenchMain {
       if (maxThroughput < opsCompleted) {
         maxThroughput = opsCompleted;
       }
-      System.out.println("\nTest: " + test + " Successful Ops: " +
-              successfulOps + " Current Speed: " + (long) opsCompleted + " ops/sec.");
+
+      String message = "Test: " + test + " Successful Ops: " +
+              successfulOps + " Current Speed: " + (long) opsCompleted + " ops/sec.      ";
+
+      if(conf.isReduceOutput()){
+        System.out.print("\r"+message);
+      }else{
+        System.out.println(message);
+      }
     }
   }
 

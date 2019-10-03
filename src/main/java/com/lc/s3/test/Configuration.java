@@ -142,6 +142,16 @@ public class Configuration {
           "Delay between starting worker batches. Default: " + workersBatchStartDelayDefault)
   private int workersBatchStartDelay = workersBatchStartDelayDefault;
 
+  private final boolean reduceOutputDefault = true;
+  @Option(name = "-reduceOutput", usage =
+          "Reduce ouput by overwriting lines. Default: " + reduceOutputDefault)
+  private boolean reduceOutput = reduceOutputDefault;
+
+  private final String purgeBucketsPrefixDefault = "salman.s3.micro.benchmarks";
+  @Option(name = "-purgeBuckets", usage =
+          "Delete all buckets that start with name. Default: " + purgeBucketsPrefixDefault)
+  private String purgeBucketsPrefix = purgeBucketsPrefixDefault;
+
   public int getMaxUploadThreads() {
     return maxUploadThreads;
   }
@@ -283,6 +293,14 @@ public class Configuration {
 
   public int getNoOfPrefixes() {
     return noOfPrefixes;
+  }
+
+  public boolean isReduceOutput() {
+    return reduceOutput;
+  }
+
+  public String getPurgeBucketsPrefix() {
+    return purgeBucketsPrefix;
   }
 
   public String getParams() {

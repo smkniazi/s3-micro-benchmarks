@@ -36,7 +36,8 @@ public class Namespace {
     if(conf.isUsePrefixes()){
       for(int i = 0; i < conf.getNoOfPrefixes(); i++){
         UUID uuid = UUID.randomUUID();
-        prefixes.add(uuid.toString()+"/");
+        //prefixes.add(uuid.toString()+"/");
+        prefixes.add(i+"/");
       }
     }
   }
