@@ -2,13 +2,11 @@ package com.lc.s3.test;
 
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
+import com.amazonaws.client.builder.ExecutorFactory;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
-import com.amazonaws.services.s3.transfer.Download;
-import com.amazonaws.services.s3.transfer.TransferManager;
-import com.amazonaws.services.s3.transfer.TransferManagerConfiguration;
-import com.amazonaws.services.s3.transfer.Upload;
+import com.amazonaws.services.s3.transfer.*;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -35,7 +33,9 @@ public class CloudPersistenceProviderS3Impl {
     this.conf = conf;
 
     this.s3Client = connect();
-    initTransferManager();
+    if(conf.isDisableS3TransferManager()){
+      initTransferManager();
+    }
   }
 
   private AmazonS3 connect() {
@@ -45,23 +45,8 @@ public class CloudPersistenceProviderS3Impl {
     return s3client;
   }
 
-  private void initTransferManager() {
-    int maxThreads = conf.getMaxUploadThreads();
-    if (maxThreads < 2) {
-      maxThreads = 2;
-    }
-
-    long keepAliveTime = conf.getThreadlTTL();
-
-    threadPoolExecutor = new ThreadPoolExecutor(
-            maxThreads, Integer.MAX_VALUE,
-            keepAliveTime, TimeUnit.SECONDS,
-            new LinkedBlockingQueue<Runnable>(),
-            BlockingThreadPoolExecutorService.newDaemonThreadFactory(
-                    "hopsfs-cloud-transfers-unbounded"));
-
+  public void initTransferManager() {
     long partSize = conf.getMultiPartSize();
-
     if (partSize < 5 * 1024 * 1024) {
       partSize = 5 * 1024 * 1024;
     }
@@ -71,14 +56,18 @@ public class CloudPersistenceProviderS3Impl {
       multiPartThreshold = 5 * 1024 * 1024;
     }
 
-    TransferManagerConfiguration transferConfiguration = new TransferManagerConfiguration();
-    transferConfiguration.setMinimumUploadPartSize(partSize);
-    transferConfiguration.setMultipartUploadThreshold(multiPartThreshold);
-    transferConfiguration.setMultipartCopyPartSize(partSize);
-    transferConfiguration.setMultipartCopyThreshold(multiPartThreshold);
-
-    transfers = new TransferManager(s3Client, threadPoolExecutor);
-    transfers.setConfiguration(transferConfiguration);
+    transfers =
+            TransferManagerBuilder.standard().withS3Client(s3Client).
+                    withExecutorFactory(new ExecutorFactory() {
+                      @Override
+                      public ExecutorService newExecutor() {
+                        return Executors.newFixedThreadPool(conf.getNumTransferManagerThreads());
+                      }
+                    }).
+                    withMultipartUploadThreshold(multiPartThreshold).
+                    withMinimumUploadPartSize(partSize).
+                    withMultipartCopyThreshold(multiPartThreshold).
+                    withMultipartCopyPartSize(partSize).build();
   }
 
   private void createS3Bucket(String bucketName) {
@@ -394,7 +383,7 @@ public class CloudPersistenceProviderS3Impl {
     return size;
   }
 
-  public void downloadObject(short bucketID, String objectID, File path) throws IOException {
+  public void downloadObjectTM(short bucketID, String objectID, File path) throws IOException {
     if (SERVERLESS) {
       sleep();
       return;
@@ -404,7 +393,7 @@ public class CloudPersistenceProviderS3Impl {
       long startTime = System.currentTimeMillis();
       Download down = transfers.download(getBucketDNSID(bucketID), objectID, path);
       down.waitForCompletion();
-      LOG.debug("HopsFS-Cloud. Download Object. Bucket ID: " + bucketID + " Object ID: " + objectID
+      LOG.debug("HopsFS-Cloud. Get Object. Using TM. Bucket ID: " + bucketID + " Object ID: " + objectID
               + " Download Path: " + path
               + " Time (ms): " + (System.currentTimeMillis() - startTime));
     } catch (AmazonServiceException e) {
@@ -413,6 +402,27 @@ public class CloudPersistenceProviderS3Impl {
       throw new IOException(e);
     } catch (InterruptedException e) {
       throw new InterruptedIOException(e.toString());
+    }
+  }
+
+  public void downloadObject(short bucketID, String objectID, File file ) throws IOException {
+    if (SERVERLESS) {
+      sleep();
+      return;
+    }
+
+    try {
+      long startTime = System.currentTimeMillis();
+      String bucket = getBucketDNSID(bucketID);
+      GetObjectRequest request = new GetObjectRequest(bucket, objectID);
+      s3Client.getObject(request, file);
+
+      LOG.debug("HopsFS-Cloud. Get Object. Bucket ID: " + bucketID + " Object ID: " + objectID
+              + " Time (ms): " + (System.currentTimeMillis() - startTime));
+    } catch (AmazonServiceException e) {
+      throw new IOException(e);
+    } catch (SdkClientException e) {
+      throw new IOException(e);
     }
   }
 

@@ -107,6 +107,7 @@ public class MicroBenchMain {
     double avgLatency = latency.getMean() / 1000000;
     String message = "\nTest: " + test +
             " Successful Ops: " + successfulOps +
+            " Speed: "+df2.format((successfulOps.get()/(double)conf.getBenchmarkDuration())*(1000))+
             " Failed: " + failedOps +
             " Avg Latency: " + df2.format(avgLatency) + " ms" +
             " Max Speed: " + maxThroughput + " ops/sec";
@@ -247,7 +248,7 @@ public class MicroBenchMain {
       }
 
       String message = "Test: " + test + " Successful Ops: " +
-              successfulOps + " Current Speed: " + (long) opsCompleted + " ops/sec.      ";
+              successfulOps + " Current Speed: " + (long) opsCompleted + " ops/sec. Failed: "+ failedOps.get()+"      ";
 
       if(conf.isReduceOutput()){
         System.out.print("\r"+message);

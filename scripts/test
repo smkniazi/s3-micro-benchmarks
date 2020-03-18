@@ -3,25 +3,25 @@
 params=(
 -bmDuration 20000 
 -numClients 100
--noOfPrefixes 1
 -bucketDeletionThreads 200
 -bucketPrefix salman.s3.micro.benchmarks 
 -clientId 0 
 -deleteExistingData 
 -disableConnectorSharing 
 -disableS3TransferManager 
-# -maxUploadThreads 10 
+#-numTransferManagerThreads 1
 -diskNSFile /mnt/ssd/namespace.bin 
 -numBuckets 1 
 -objSize 1024 
 -testPut 
-#-testDelete 
 -testGet 
+#-testDelete 
 #-testGetMetaData 
 #-testList 
 #-testObjExists 
--tmpFolder "/mnt/ssd" 
+-tmpFolder "/mnt/nvme_ssd0/tmp" 
 -usePrefixes 
+-noOfPrefixes 1
 #-startPrompt
 -workersStartBatchSize 10
 -workersBatchStartDelay 1000

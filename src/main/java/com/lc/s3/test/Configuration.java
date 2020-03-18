@@ -33,7 +33,7 @@ public class Configuration {
   @Option(name = "-bucketPrefix", usage = "Bucket prefix. Default: " + bucketPrefixDefault)
   private String bucketPrefix = bucketPrefixDefault;
 
-  private final String regionStrDefault = "eu-west-1";
+  private final String regionStrDefault = "eu-north-1";
   @Option(name = "-region", usage = "S3 Region. Default:" + regionStrDefault)
   private String regionStr = regionStrDefault;
   private Regions region = Regions.fromName(regionStr);
@@ -47,15 +47,7 @@ public class Configuration {
           "Default: " + bucketDeletionThreadsDefault)
   private int bucketDeletionThreads = bucketDeletionThreadsDefault;
 
-  private final int maxUploadThreadsDefault = 20;
-  @Option(name = "-maxUploadThreads", usage = "Max upload threads. Default: " + maxUploadThreadsDefault)
-  private int maxUploadThreads = maxUploadThreadsDefault;
-
-  private final int threadlTTLDefault = 60;
-  @Option(name = "-threadlTTL", usage = "Thread TTL in Sec. Default: " + threadlTTLDefault)
-  private int threadlTTL = threadlTTLDefault;
-
-  private final int multiPartSizeDefault = 5 * 1024 * 1024;
+  private final int multiPartSizeDefault = 16 * 1024 * 1024;
   @Option(name = "-multiPartSize", usage = "Multipart size. >= 5MB (5 * 1024 * 1024). Default: " + multiPartSizeDefault)
   private int multiPartSize = multiPartSizeDefault;
 
@@ -117,6 +109,10 @@ public class Configuration {
   @Option(name = "-disableConnectorSharing", usage = "Disable sharing S3 connector with the threads. Default: " + disableConnectorSharingDefault)
   private boolean disableConnectorSharing = disableConnectorSharingDefault;
 
+  private final int numTransferManagerThreadsDefault = 5;
+  @Option(name = "-numTransferManagerThreads", usage = "Transfer manager threads. Default: " + disableConnectorSharingDefault)
+  private int numTransferManagerThreads = numTransferManagerThreadsDefault;
+
   private final boolean disableTransferManagerDefault = false;
   @Option(name = "-disableS3TransferManager", usage =
           "Disable S3 Transfer manager. Default: " + disableTransferManagerDefault)
@@ -151,14 +147,6 @@ public class Configuration {
   @Option(name = "-purgeBuckets", usage =
           "Delete all buckets that start with name. Default: " + purgeBucketsPrefixDefault)
   private String purgeBucketsPrefix = purgeBucketsPrefixDefault;
-
-  public int getMaxUploadThreads() {
-    return maxUploadThreads;
-  }
-
-  public int getThreadlTTL() {
-    return threadlTTL;
-  }
 
   public int getMultiPartSize() {
     return multiPartSize;
@@ -271,6 +259,10 @@ public class Configuration {
     return disableConnectorSharing;
   }
 
+  public int getNumTransferManagerThreads() {
+    return numTransferManagerThreads;
+  }
+
   public boolean isDisableS3TransferManager() {
     return disableS3TransferManager;
   }
@@ -316,8 +308,6 @@ public class Configuration {
     sb.append("regionStr : ").append(regionStr).append("\n");
     sb.append("numBuckets : ").append(numBuckets).append("\n");
     sb.append("bucketDeletionThreads : ").append(bucketDeletionThreads).append("\n");
-    sb.append("maxUploadThreads : ").append(maxUploadThreads).append("\n");
-    sb.append("threadlTTL : ").append(threadlTTL).append("\n");
     sb.append("multiPartSize : ").append(multiPartSize).append("\n");
     sb.append("multiPartThreshold : ").append(multiPartThreshold).append("\n");
     sb.append("tmpFolder : ").append(tmpFolder).append("\n");
@@ -329,6 +319,7 @@ public class Configuration {
     sb.append("disableS3TransferManager : ").append(disableS3TransferManager).append("\n");
     sb.append("workersStartBatchSize : ").append(workersStartBatchSize).append("\n");
     sb.append("workersBatchStartDelay :  ").append(workersBatchStartDelay).append("\n");
+    sb.append("numTransferManagerThreads :  ").append(numTransferManagerThreads).append("\n");
 
     return sb.toString();
 

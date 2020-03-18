@@ -71,7 +71,7 @@ public class Worker implements Runnable {
         successfulOps.incrementAndGet();
       } catch (IOException e) {
         failedOps.incrementAndGet();
-        e.printStackTrace();
+//        e.printStackTrace();
       } catch (Throwable e) {
         failedOps.incrementAndGet();
         e.printStackTrace();
@@ -96,8 +96,15 @@ public class Worker implements Runnable {
 
   private void getTest() throws IOException {
     BucketObject obj = namespace.getObject();
-    CloudPersistenceProviderS3Impl.getConnector(conf)
-            .downloadObject(obj.getBucket(), obj.getKey(), tempGetFile);
+
+    if (conf.isDisableS3TransferManager()) {
+      CloudPersistenceProviderS3Impl.getConnector(conf)
+              .downloadObject(obj.getBucket(), obj.getKey(), tempGetFile);
+    } else {
+      CloudPersistenceProviderS3Impl.getConnector(conf)
+              .downloadObjectTM(obj.getBucket(), obj.getKey(), tempGetFile);
+    }
+
   }
 
   private void existTest() throws IOException {
@@ -122,7 +129,7 @@ public class Worker implements Runnable {
     BucketObject obj = namespace.getRandomObj();
     String prefixStr = obj.getPrefix();
     int count = CloudPersistenceProviderS3Impl.getConnector(conf).listDir(obj.getBucket(),
-            prefixStr );
+            prefixStr);
     assert count > 0;
   }
 
