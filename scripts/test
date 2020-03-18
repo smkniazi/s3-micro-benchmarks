@@ -1,12 +1,12 @@
 #!/bin/bash
 
 params=(
--bmDuration 20000 
+-bmDuration 60000 
 -numClients 2000
 -bucketDeletionThreads 3000
 -bucketPrefix salman.s3.micro.benchmarks 
 -clientId 0 
-#-deleteExistingData 
+-deleteExistingData 
 -disableConnectorSharing 
 -disableS3TransferManager 
 #-numTransferManagerThreads 5
