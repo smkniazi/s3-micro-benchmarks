@@ -13,7 +13,7 @@ public class Worker implements Runnable {
   private final AtomicInteger successfulOps;
   private final AtomicInteger failedOps;
   private final SynchronizedDescriptiveStatistics latency;
-  private final Random rand = new Random(System.nanoTime());
+  private final Random rand = new Random(System.currentTimeMillis());
   private final Configuration conf;
   private final S3Tests test;
   private int counter = 0;
@@ -48,7 +48,7 @@ public class Worker implements Runnable {
   private void test(S3Tests test) {
     while (run) {
       try {
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         if (test == S3Tests.PUT) {
           putTest();
         } else if (test == S3Tests.GET) {
@@ -66,7 +66,7 @@ public class Worker implements Runnable {
         } else {
           throw new UnsupportedOperationException("Test not implemented yet");
         }
-        long opExeTime = (System.nanoTime() - startTime);
+        long opExeTime = (System.currentTimeMillis() - startTime);
         latency.addValue(opExeTime);
         successfulOps.incrementAndGet();
       } catch (IOException e) {

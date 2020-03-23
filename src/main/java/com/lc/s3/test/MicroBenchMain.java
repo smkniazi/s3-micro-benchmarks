@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.SdkClientException;
 import org.apache.commons.math3.stat.descriptive.SynchronizedDescriptiveStatistics;
 
 public class MicroBenchMain {
@@ -38,7 +40,13 @@ public class MicroBenchMain {
       namespace.deleteLocalCopy();
     }
 
-    CloudPersistenceProviderS3Impl.getConnector(conf).createBuckets();
+    try {
+      CloudPersistenceProviderS3Impl.getConnector(conf).createBuckets();
+    } catch (AmazonServiceException e) {
+      System.err.println(e.getMessage());
+    } catch (SdkClientException e) {
+      System.err.println(e.getMessage());
+    }
 
     ynprompt();
 
@@ -104,7 +112,7 @@ public class MicroBenchMain {
     speedPrinter.shutdown();
     speedPrinter.join();
 
-    double avgLatency = latency.getMean() / 1000000;
+    double avgLatency = latency.getMean() / 1000;
     String message = "\nTest: " + test +
             " Successful Ops: " + successfulOps +
             " Speed: "+df2.format((successfulOps.get()/(double)conf.getBenchmarkDuration())*(1000))+
@@ -113,6 +121,7 @@ public class MicroBenchMain {
             " Max Speed: " + maxThroughput + " ops/sec";
     blueColoredText(message);
     writeResult(message + "\n");
+    writePercentiles(test, latency);
   }
 
   public List<Worker> createWorkers(S3Tests test, int count)
@@ -197,6 +206,9 @@ public class MicroBenchMain {
 
   private void notePramsToResultsFile() throws IOException {
     File results = new File(conf.getResultFile());
+    if(!results.getParentFile().exists()){
+      results.getParentFile().mkdir();
+    }
     if (!results.exists()) {
       results.createNewFile();
     }
@@ -207,10 +219,27 @@ public class MicroBenchMain {
 
   private void writeResult(String res) throws IOException {
     File results = new File(conf.getResultFile());
+    if(!results.getParentFile().exists()){
+      results.getParentFile().mkdir();
+    }
     BufferedWriter writer = new BufferedWriter(new FileWriter(results, true));
     writer.write(res);
     writer.close();
   }
+
+  private void writePercentiles(S3Tests test, SynchronizedDescriptiveStatistics latency) throws IOException {
+    File results = new File(conf.getResultFile());
+    if(!results.getParentFile().exists()){
+     results.getParentFile().mkdir();
+    }
+    File percentilesFile = new File(results.getParent()+"/"+test+".percentile");
+    BufferedWriter writer = new BufferedWriter(new FileWriter(percentilesFile));
+    for(double val :latency.getValues()){
+      writer.write(val+"\n");
+    }
+    writer.close();
+  }
+
 
   class SpeedPrinter extends Thread {
     private long previousCount = 0;
